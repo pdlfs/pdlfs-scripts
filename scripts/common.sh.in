@@ -52,6 +52,7 @@
 #       $JOBRUNCMD - command to run jobs
 #  $JOBHOSTS - nodes to run jobs (default: localhost)
 #              (only used if not running on a Cray or an Emulab platform)
+#  $HOSTNAME_SUFFIX - append to each hostname if set (only for Emulab)
 #  $MPIRUN - mpirun command to use (if not running under a scheduler)
 #
 #  Env running moab:
@@ -386,6 +387,16 @@ bb_stageoutwait() {
     message "Stage Out Completed" "Status $status" "Count $count"
 }
 
+# get_emulab_hoststr: get all hosts on emulab exp
+# append a prefix if HOSTNAME_SUFFIX is set
+get_emulab_hoststr() {
+  hosts=$(/share/testbed/bin/emulab-listall)
+  if [ x${HOSTNAME_SUFFIX-} != x ]; then
+    hosts=$(echo $hosts | sed -e 's/,/\n/g' | awk "NF{ print \$0\"-$HOSTNAME_SUFFIX\"}" | paste -sd "," -)
+  fi
+  echo $hosts
+}
+
 #
 # all_nodes
 #
@@ -422,8 +433,7 @@ gen_hostfile() {
     elif [ -f "/share/testbed/bin/emulab-listall" ]; then
 
         # Generate hostfile on Emulab and store on disk
-        # XXX: temporary hack for sus function
-        exp_hosts="`/share/testbed/bin/emulab-listall | sed -e 's/,/-dfge,/g' -e 's/$/-dfge/g' | tr ',' '\n'`"
+        exp_hosts=$(get_emulab_hoststr)
 
         echo "$exp_hosts" > $jobdir/hosts.txt || \
             die "failed to create hosts.txt file"
