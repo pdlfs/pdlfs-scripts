@@ -779,8 +779,8 @@ sub savefile {
 my($cmd) = join(" ", @ARGV);
 my($rv, $account, $addrunopts, $bbosbuddies, $constraints, $core_spec,
    $cpubind, $deckid, $dryrun, $dw, @envs, $experiment, $extraopts, $ipsubnet,
-   $iterations, $overcommit, $queue, $partition, $platform, $postruncmd,
-   $prefix, $run, $scaletime, $script, $skipreads, $tag, $tests);
+   $iterations, $loadfile, $overcommit, $queue, $partition, $platform,
+   $postruncmd, $prefix, $run, $scaletime, $script, $skipreads, $tag, $tests);
 my($defplatform);
 
 # non-undef defaults
@@ -814,6 +814,7 @@ $rv = GetOptions(
     "hostname=s"     =>  \$hostname,
     "ipsubnet=s"     =>  \$ipsubnet,
     "iterations=i"   =>  \$iterations,
+    "loadfile=s"     =>  \$loadfile,
     "overcommit=s"   =>  \$overcommit,
     "queue=s"        =>  \$queue,
     "partition=s"    =>  \$partition,
@@ -846,6 +847,7 @@ sub usage {
     print STDERR "\t--env E=val       setenv 'E' to 'val' in script\n";
     print STDERR "\t--experiment S    experiment to run\n";
     print STDERR "\t--iterations I    #of iterations for each run\n";
+    print STDERR "\t--loadfile S      load external expts from this file\n";
     print STDERR "\t--overcommit S    overcommit (enable/disable/default)\n";
     print STDERR "\t--queue S         job queue to use (cobalt)\n";
     print STDERR "\t--partition S     slurm partition (slurm only)\n";
@@ -890,6 +892,22 @@ my($exprow, $exp, $postfun, @rns, %wantrun, $prun_on);
 my(@ekeys, @cleanenv);
 my(@opts, %opts_skipgen, @fmtbuf, $vpicgen_fmtopts);
 my($fullextra, $EXPPARAMS_regex);
+
+#
+# allow external experiments for debugging/testing.  we want the
+# important ones (e.g. for papers) embedded in the script for safekeeping.
+#
+if ($loadfile ne '') {
+    die "missing loadfile $loadfile" unless (-f $loadfile);
+    $_ = `cat $loadfile`;
+    $_ = eval $_;
+    if (!defined($_)) {
+        print "$@" if ($@);
+        print "couldn't load $loadfile\n";
+        exit(1);
+    }
+}
+
 $exprow = $TOC{$experiment};
 
 usage() if ($rv != 1);
@@ -979,6 +997,7 @@ foreach (@envs) {
     "env"         => join(" ", @ekeys),
     "experiment"  => $experiment,
     "iterations"  => $iterations,
+    "loadfile"    => $loadfile,
     "overcommit"  => $overcommit,
     "queue"       => $queue,
     "partition"   => $partition,
