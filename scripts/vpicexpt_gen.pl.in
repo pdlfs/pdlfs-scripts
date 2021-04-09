@@ -778,9 +778,10 @@ sub savefile {
 
 my($cmd) = join(" ", @ARGV);
 my($rv, $account, $addrunopts, $bbosbuddies, $constraints, $core_spec,
-   $cpubind, $deckid, $dryrun, $dw, @envs, $experiment, $extraopts, $ipsubnet,
-   $iterations, $overcommit, $queue, $partition, $platform, $postruncmd,
-   $prefix, $run, $scaletime, $script, $skipreads, $tag, $tests);
+   $cpubind, $deckid, $dryrun, $dw, @envs, $experiment, $extraopts,
+   $hostsuffix, $ipsubnet, $iterations, $overcommit, $queue, $partition,
+   $platform, $postruncmd, $prefix, $run, $scaletime, $script, $skipreads,
+   $tag, $tests);
 my($defplatform);
 
 # non-undef defaults
@@ -788,6 +789,7 @@ $bbosbuddies = 0;
 $cpubind = 'none';
 $deckid = 'trecon-part/turbulence';
 $dw = 'off';
+$hostsuffix = '';
 $ipsubnet = guess_subnet();
 $iterations = 1;
 $prefix = '@CMAKE_INSTALL_PREFIX@';
@@ -812,6 +814,7 @@ $rv = GetOptions(
     "experiment=s"   =>  \$experiment,
     "extraopts=s"    =>  \$extraopts,
     "hostname=s"     =>  \$hostname,
+    "hostsuffix=s"   =>  \$hostsuffix,
     "ipsubnet=s"     =>  \$ipsubnet,
     "iterations=i"   =>  \$iterations,
     "overcommit=s"   =>  \$overcommit,
@@ -845,6 +848,8 @@ sub usage {
     print STDERR "\t--dw state        datawarp state (off, bw, int)\n";
     print STDERR "\t--env E=val       setenv 'E' to 'val' in script\n";
     print STDERR "\t--experiment S    experiment to run\n";
+    print STDERR "\t--hostsuffix S    hostname suffix (emulab)\n";
+    print STDERR "\t--ipsubnet S      IP subnet to target\n";
     print STDERR "\t--iterations I    #of iterations for each run\n";
     print STDERR "\t--overcommit S    overcommit (enable/disable/default)\n";
     print STDERR "\t--queue S         job queue to use (cobalt)\n";
@@ -874,7 +879,6 @@ sub usage {
     print STDERR "debug/testing options:\n";
     print STDERR "\t--extraopts S     extra platform run flags\n";
     print STDERR "\t--hostname S      override local hostname\n";
-    print STDERR "\t--ipsubnet S      IP subnet to target\n";
     print STDERR "\t--platform S      platform to use\n";
     print STDERR "\t--prefix S        deltafs-umbrella install prefix\n";
     print STDERR "\n";
@@ -978,6 +982,8 @@ foreach (@envs) {
     "dw"          => $dw,
     "env"         => join(" ", @ekeys),
     "experiment"  => $experiment,
+    "hostsuffix"  => $hostsuffix,
+    "ipsubnet"    => $ipsubnet,
     "iterations"  => $iterations,
     "overcommit"  => $overcommit,
     "queue"       => $queue,
@@ -992,7 +998,6 @@ foreach (@envs) {
     ""            => undef,
     "hostname"    => $hostname,
     "extraopts"   => $extraopts,
-    "ipsubnet"    => $ipsubnet,
     "platform"    => $platform,
     "prefix"      => $prefix,
     "output-dir"  => $ARGV[0]);
@@ -1000,7 +1005,7 @@ foreach (@envs) {
 # don't put these in VPICGENOPTS, since they are in EXPPARAMS because
 # they are CLI args to the script (don't need duplicate value)
 %opts_skipgen = ( "bbosbuddies" => 1, "cpubind" => 1, "deckid" => 1,
-                  "ipsubnet" => 1, "skipreads" => 1);
+                  "hostsuffix" => 1, "ipsubnet" => 1, "skipreads" => 1);
 
 print "vpicexpt_gen settings:\n";
 for ($_ = 0 ; $_ <= $#opts ; $_ += 2) {
@@ -1032,9 +1037,10 @@ if ($addrunopts ne '') {
 #
 # regular expression to use to build EXPPARAMS
 #
-$EXPPARAMS_regex = '^test=|^ipsubnet=|^nodes=|^ppn=|^vpicdumps=|^cpubind=|' .
-                   '^vpicsteps=|^px=|^py=|^pz=|^tx=|^ty=|^tz=|^deckid=|' .
-                   '^bbosbuddies=|^skipreads=|^maxtime=|^basextra=|^dwsize=';
+$EXPPARAMS_regex = '^test=|^hostsuffix=|^ipsubnet=|^nodes=|^ppn=|^vpicdumps=|' .
+                   '^cpubind=|^vpicsteps=|^px=|^py=|^pz=|^tx=|^ty=|^tz=|' .
+                   '^deckid=|^bbosbuddies=|^skipreads=|^maxtime=|' .
+                   '^basextra=|^dwsize=';
 
 #
 # create output directory if it isn't present
@@ -1178,6 +1184,7 @@ for (my($r) = 0 ; $r <= $#$exp ; $r++) {
 #
 test=$t
 cpubind=$cpubind
+hostsuffix=$hostsuffix
 ipsubnet=$ipsubnet
 nodes=$nodes
 ppn=$ppn
@@ -1252,6 +1259,7 @@ do
     echo running iteration \$it
     # XXX: should reset logfile name here
     $prefix/scripts/$script test_type=\$test \\
+        host_suffix="\$hostsuffix" \\
         ip_subnet="\$ipsubnet" nodes=\$nodes cpubind=\$cpubind \\
         procs_per_node=\$ppn num_vpic_dumps=\$vpicdumps \\
         num_vpic_steps=\$vpicsteps px=\$px py=\$py pz=\$pz \\

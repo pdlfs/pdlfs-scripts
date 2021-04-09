@@ -15,6 +15,7 @@
 # global variables we set/use:
 #  $dfsu_prefix - deltafs umbrella prefix directory (abspath)
 #  $common_noinit - set to non-null disable call to common_init (for dbg)
+#  $host_suffix - append "-suffix" to hostnames if set - emulab only (string)
 #  $ip_subnet - the ip subnet we want to use (x.y.z.t)
 #  $jobdir - per-job shared output directory (abspath)
 #  $jobenv - job environment (moab, slurm, etc.) (string)
@@ -422,7 +423,11 @@ gen_hostfile() {
     elif [ -f "/share/testbed/bin/emulab-listall" ]; then
 
         # Generate hostfile on Emulab and store on disk
-        exp_hosts="`/share/testbed/bin/emulab-listall | tr ',' '\n'`"
+        if [ x$host_suffix != x ]; then
+            exp_hosts="`/share/testbed/bin/emulab-listall --append $host_suffix | tr ',' '\n'`"
+        else
+            exp_hosts="`/share/testbed/bin/emulab-listall | tr ',' '\n'`"
+        fi
 
         echo "$exp_hosts" > $jobdir/hosts.txt || \
             die "failed to create hosts.txt file"

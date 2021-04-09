@@ -18,6 +18,7 @@ set -euo pipefail
 #########################################
 
 arg_test_type="baseline"  ## or deltafs, shuffle_test, ...
+arg_host_suffix=""
 arg_ip_subnet="10.111"
 arg_nodes="1"
 arg_procs_per_node="4"
@@ -52,6 +53,7 @@ source ${dfsu_prefix}/scripts/vpic_common.sh
 loadargs "$@"
 
 # XXX: jam args back into global variables shared with common.sh
+host_suffix="$arg_host_suffix"
 ip_subnet="$arg_ip_subnet"
 nodes="$arg_nodes"
 vpic_cpubind="$arg_cpubind"
