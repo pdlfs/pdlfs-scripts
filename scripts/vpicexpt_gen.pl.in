@@ -18,10 +18,50 @@
 
 use strict;
 
+#
+# we define important experiment configs (e.g. ones used for papers)
+# in this script so the configs are preserved in git.   additional
+# non-critical experiments can be added using "--loadfile" ...
+#
+# the current list of experiments is stored in %TOC (i.e. table-of-contents).
+# the key is the experiment name, the value is the experiment config.
+# an experiment consists of an array of N runs (numbered 0 to N-1) and
+# an optional post-processing function.  The post-processing function
+# (if provided) is applied to a run to adjust the params (e.g. scaling
+# the params upward).
+#
+# a run has the following params:
+#   number of nodes, number of dumps, number of vpic steps per dump,
+#   PX, PY, PZ,  TX, TY, TZ,  procs-per-node, max time, xtra time, dwsize.
+#
+#  PX/PY/PZ is the particle distribution
+#  TX/TY/TZ is the node topology
+#
+#  max time and xtra time are applied when using batch systems like
+#  slurm where you have to specify the max run time of a batch job.
+#
+#  dwsize is the Cray DataWarp burstbuffer size (only relevant on
+#  a Cray with a burst buffer).
+#
+# the number of particles is PX*PY*PZ*100
+#
+# the numeric args for a deck are: PX PY PZ  TX TY TZ  DUMPS STEPS
+#
+#    -  note that the numbers passed to the deck are the ones from
+#       the config file after they've been through the post-processing
+#       function... e.g. stdpost_2d()
+#
+#    - note that run_vpic_test.sh passes the numeric args to the
+#      deck building script as args (they'll end up in vpic config.h).
+#      but if you are using a emulator program (e.g. preload-runner),
+#      then the numeric args get passed on the command line.
+#
+
 ##############################################################################
 # define experiments here
 ##############################################################################
-my(%TOC, @minimal, @dwtest, @fanrun, @cs19a, @cs19b, @cs19c, @cs19d, @cs19e, @cs19f,
+my(%TOC, @minimal, @dwtest, @fanrun);
+my(@cs19a, @cs19b, @cs19c, @cs19d, @cs19e, @cs19f,
 @pd18a, @pd18b, @pd18c, @pd18d, @pd18e, @pd18f, @pd18h,
 @pd18i, @pd18j, @pd18x, @pd18y, @sc18a, @sc18b, @sc18c,
 @sc18d, @sc18e, @sc18f, @sc18k, @sc18l, @sc18r, @sc18n,
@@ -659,6 +699,8 @@ my(%TOC, @minimal, @dwtest, @fanrun, @cs19a, @cs19b, @cs19c, @cs19d, @cs19e, @cs
 #
 # stdpost(): standard post processor.  converts factor values in a row
 # of the array to their real values...
+# sets PX=10^px, PY=ncores*py, PZ=10^pz, TY=ncores.
+# leaves TX and TZ as-is.
 #
 sub stdpost {
     my($rowref) = @_;
@@ -678,6 +720,8 @@ sub stdpost {
 
 #
 # stdpost_2d(): the 2d-version of the stdpost() defined above.
+# sets PX=ncores*px, PY=10^py, PZ=1, TX=ncores.
+# TY and TZ are unchanged (typically 1).
 #
 sub stdpost_2d {
    my($rowref) = @_;
