@@ -1,0 +1,27 @@
+#!/usr/bin/env perl
+
+#
+# Copyright (c) 2019 Carnegie Mellon University,
+# Copyright (c) 2019 Triad National Security, LLC, as operator of
+#     Los Alamos National Laboratory.
+#
+# All rights reserved.
+#
+# Use of this source code is governed by a BSD-style license that can be
+# found in the LICENSE file. See the AUTHORS file for names of contributors.
+#
+
+#
+# shm-cleanup  cleanup stray mercury na+sm and psm files in /dev/shm
+# 16-Apr-2021  chuck@ece.cmu.edu
+#
+
+use strict;
+my(@togo);
+
+@togo = (glob("/dev/shm/na_sm*"), glob("/dev/shm/psm_shm*"));
+foreach (@togo) {
+    unlink($_);
+}
+
+exit(0);
