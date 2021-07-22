@@ -123,7 +123,7 @@ fi
 
 # prepare the lib for LD_PRELOAD
 if [ x"$arg_pre" != x ]; then
-    prog_pre="${dfsu_prefix}/lib/$arg_pre"
+    preload_list "${dfsu_prefix}/lib" "$arg_pre" prog_pre
 else
     prog_pre=
 fi
