@@ -515,6 +515,7 @@ clear_caches() {
 #          will set $BAR to "/foo/lib/a.so:/tmp/lib.b.so"
 #
 preload_list() {
+    eval $3=         # init output variable to empty value to start
     for preload_list_lcv in `echo $2 | sed -e 's/:/ /g'`;
     do
         preload_list_p=$preload_list_lcv
