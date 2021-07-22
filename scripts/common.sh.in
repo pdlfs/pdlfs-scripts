@@ -505,6 +505,33 @@ clear_caches() {
 }
 
 #
+# preload_list: set up an LD_PRELOAD list with help from prefix
+#   $1 = prefix (we prepend $1/lib/ to entries w/o a "/" in them)
+#   $2 = input  (list of preload files sep'd by  ":")
+#   $3 = name of variable to put result in
+# sets: global variable $3 (using eval)
+#
+# example: preload_list /foo/lib "a.so:/tmp/lib/b.so" BAR
+#          will set $BAR to "/foo/lib/a.so:/tmp/lib.b.so"
+#
+preload_list() {
+    for preload_list_lcv in `echo $2 | sed -e 's/:/ /g'`;
+    do
+        preload_list_p=$preload_list_lcv
+
+        preload_list_slash=`echo $preload_list_p | sed -e 's@[^/]@@g'`
+        if [ x$preload_list_slash = x ]; then
+            preload_list_p="$1/$preload_list_p"
+        fi
+        if [ -z "`eval echo \\$$3`" ]; then
+            eval $3=$preload_list_p
+        else
+            eval $3="\$$3:$preload_list_p"
+        fi
+    done
+}
+
+#
 # do_mpirun: Run slurm/cobalt/mpich/openmpi command
 #
 # Arguments:
