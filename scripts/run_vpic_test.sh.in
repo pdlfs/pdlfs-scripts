@@ -37,6 +37,8 @@ arg_should_skip_query="0"
 arg_should_do_multipass_query="0"
 # set the lib to preload or leave it empty to avoid preloading anything
 arg_pre="${VPIC_PRE-libdeltafs-preload.so}"
+# preload for the query/read phase
+arg_pre_q="${VPIC_QUERY_PRE-}"
 # if set, will use the specified io skeleton program to emulate
 # the io pattern and will skip building a real vpic deck
 arg_emu="${VPIC_EMU-}"
@@ -127,11 +129,18 @@ if [ x"$arg_pre" != x ]; then
 else
     prog_pre=
 fi
+# query/read side
+if [ x"$arg_pre_q" != x ]; then
+    preload_list "${dfsu_prefix}/lib" "$arg_pre_q" prog_pre_q
+else
+    prog_pre_q=
+fi
 
 message ""
 message ""
 
-vpic_do_run $arg_test_type $parts $arg_procs_per_node "$prog" "$prog_pre"
+vpic_do_run $arg_test_type $parts $arg_procs_per_node \
+    "$prog" "$prog_pre" "$prog_pre_q"
 
 # overall time
 timeout=`date`

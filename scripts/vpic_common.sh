@@ -173,7 +173,8 @@ vpic_build_deck() {
 # @2 number of particles
 # @3 ppn
 # @4 job deck
-# @5 lib to preload (disabled if not set)
+# @5 lib to preload for vpic run (disabled if not set)
+# @6 lib to preload for read/query
 vpic_do_run() {
     runtype=$1
     p=$2
@@ -181,6 +182,7 @@ vpic_do_run() {
     jobdeck=${4:-"${jobdir}/current-deck.op"}
     jobdeck1=$(echo $jobdeck | cut -d' ' -f1)
     prelib=${5:-}
+    prelibq=${6:-}
 
     prelib_env="" # empty, will not insert any LD_PRELOAD stuff
     if [ x"$prelib" != x ]; then
@@ -293,7 +295,7 @@ vpic_do_run() {
 
         ### READ PATH ###
         if [ $vpic_do_querying -ne 0 ]; then
-            vpic_query_particles $runtype $vpic_dir $pp
+            vpic_query_particles $runtype $vpic_dir $pp "$prelibq"
         else
             message ""
             message "!!! WARNING !!! write only - skipping read phase..."
@@ -449,7 +451,7 @@ vpic_do_run() {
 
         ### READ PATH ###
         if [ $vpic_do_querying -ne 0 ]; then
-            vpic_query_particles $runtype $exp_dir $pp
+            vpic_query_particles $runtype $exp_dir $pp "$prelibq"
         else
             message ""
             message "!!! WARNING !!! write only - skipping read phase..."
@@ -474,10 +476,19 @@ vpic_do_run() {
 # @1 experiment type in {"baseline", "deltafs"}
 # @2 vpic output directory
 # @3 total number of particles
+# @4 preload for queries (empty for none)
 vpic_query_particles() {
     runtype=$1
     vpicout=$2
     pp=$3  ### for printing only ###
+    vqp_preload=$4
+
+    prelibq_env="" # empty, will not insert any LD_PRELOAD stuff
+    if [ x"$vqp_preload" != x ]; then
+        prelibq_env="LD_PRELOAD $vqp_preload"
+    fi
+
+    env_vars=( $prelibq_env )
 
     case $runtype in
     "baseline")
@@ -517,10 +528,10 @@ vpic_query_particles() {
     # single-pass approach. Otherwise query 100 particles to get a dependable
     # confidence interval.
     if [ $last -eq 1 ]; then
-        do_mpirun $nnum $qppn "$vpic_cpubind" "" $vpic_nodes \
+        do_mpirun $nnum $qppn "$vpic_cpubind" env_vars[@] $vpic_nodes \
             "$reader_bin $reader_conf" "${EXTRA_MPIOPTS-}"
     else
-        do_mpirun $nnum $qppn "$vpic_cpubind" "" $vpic_nodes \
+        do_mpirun $nnum $qppn "$vpic_cpubind" env_vars[@] $vpic_nodes \
             "$reader_bin $reader_conf" "${EXTRA_MPIOPTS-}"
     fi
 }
