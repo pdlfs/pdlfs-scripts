@@ -550,7 +550,7 @@ do_mpirun() {
     ppnode=$2
     bind_opt="$3"
     if [ ! -z "$4" ]; then
-        declare -a envs=("${!4}")
+        declare -a envs=(${!4-})
     else
         envs=()
     fi
