@@ -423,7 +423,7 @@ gen_hostfile() {
     elif [ -f "/share/testbed/bin/emulab-listall" ]; then
 
         # Generate hostfile on Emulab and store on disk
-        if [ x$host_suffix != x ]; then
+        if [ x${host_suffix-} != x ]; then
             exp_hosts="`/share/testbed/bin/emulab-listall --append $host_suffix | tr ',' '\n'`"
         else
             exp_hosts="`/share/testbed/bin/emulab-listall | tr ',' '\n'`"
