@@ -1,0 +1,63 @@
+#!/usr/bin/env bash
+
+CSV_FILE=rtp-bench-runs.csv
+NPIVOTS=256
+NCORESPERNODE=16
+
+RTPBENCH_BIN=@CMAKE_INSTALL_PREFIX@/bin/rtp-bench-runner
+
+gen_hosts_wfib() {
+  NNODES=$1
+  for i in $(seq 0 $(( NNODES - 1))); do
+    echo h$i-dib:16;
+  done > hosts.txt
+}
+
+gen_hosts() {
+  gen_hosts_wfib $1
+}
+
+run_all() {
+  NROUNDS=( 1 10 100 )
+  NNODES=( 1 2 4 8 16 32 )
+
+  for nrounds in "${NROUNDS[@]}"; do
+    echo $nrounds
+    for n in "${NNODES[@]}"; do
+      nranks=$(( n * $NCORESPERNODE ))
+      logfile=ranks.$nranks.txt
+      echo $n, $nranks
+      run_one $nranks $nrounds $logfile
+      parse_logfile $logfile
+    done
+  done
+  return
+}
+
+parse_logfile() {
+  logfile=$1
+  times=$(cat $logfile | grep Rounds | egrep -o '[0-9]+\.?[0-9]*us' | sed 's/us//g' | paste -sd,)
+  rounds=$(cat $logfile | egrep -o 'Rounds: [0-9]+' | sed 's/Rounds:\ //g')
+  nranks=$(echo $logfile | egrep -o '[0-9]+')
+
+  if [ ! -f "$CSV_FILE" ]; then
+    echo "nranks,rounds,npivots,mean,std,min,max" > $CSV_FILE
+  fi
+  echo $nranks,$rounds,$NPIVOTS,$times >> $CSV_FILE
+}
+
+run_one() {
+  nranks=$1
+  nrounds=$2
+  nwarmup=10
+  logfile=$3
+
+  mpirun -f hosts.txt -n $nranks \
+    -ppn 16 \
+   -env SHUFFLE_Mercury_proto bmi+tcp \
+   -env SHUFFLE_Subnet 10.94 \
+   $RTPBENCH_BIN -w nwarmup -n $nrounds 2>&1 | tee $logfile
+}
+
+gen_hosts 32
+run_all
