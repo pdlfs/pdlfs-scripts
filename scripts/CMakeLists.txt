@@ -32,7 +32,7 @@ endif()
 #
 set (install-files )
 set (install-programs cbatch cobalt_nodefile ethq.pl slurm_nodefile)
-set (install-programs-in common.sh.in)
+set (install-programs-in common.sh.in run_rtp_bench.sh.in)
 
 #
 # deltafs-bb scripts
