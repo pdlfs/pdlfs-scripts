@@ -404,7 +404,7 @@ vpic_do_run() {
             "PLFSDIR_Unordered_storage" ${XX_SKIP_SORT:-"0"}
             "PLFSDIR_Use_plaindb" ${XX_USE_PLAINDB:-"0"}
             "PLFSDIR_Use_leveldb" ${XX_USE_LEVELDB:-"0"}
-            "PLFSDIR_Use_rangedb" ${XX_USE_LEVELDB:-"1"}
+            "PLFSDIR_Use_rangedb" ${XX_USE_RANGEDB:-"1"}
             "PLFSDIR_Ldb_force_l0" ${XX_LEVELDB_L0ONLY:-"0"}
             "PLFSDIR_Ldb_use_bf" ${XX_LEVELDB_WITHBF:-"0"}
             "PLFSDIR_Env_name" ${XX_ENV_NAME:-"posix.unbufferedio"}
