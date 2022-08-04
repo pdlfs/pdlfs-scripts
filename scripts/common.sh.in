@@ -15,6 +15,7 @@
 # global variables we set/use:
 #  $dfsu_prefix - deltafs umbrella prefix directory (abspath)
 #  $common_noinit - set to non-null disable call to common_init (for dbg)
+#  $host_suffix - append "-suffix" to hostnames if set - emulab only (string)
 #  $ip_subnet - the ip subnet we want to use (x.y.z.t)
 #  $jobdir - per-job shared output directory (abspath)
 #  $jobenv - job environment (moab, slurm, etc.) (string)
@@ -433,7 +434,11 @@ gen_hostfile() {
     elif [ -f "/share/testbed/bin/emulab-listall" ]; then
 
         # Generate hostfile on Emulab and store on disk
-        exp_hosts=$(get_emulab_hoststr)
+        if [ x${host_suffix-} != x ]; then
+            exp_hosts="`/share/testbed/bin/emulab-listall --append $host_suffix | tr ',' '\n'`"
+        else
+            exp_hosts="`/share/testbed/bin/emulab-listall | tr ',' '\n'`"
+        fi
 
         echo "$exp_hosts" > $jobdir/hosts.txt || \
             die "failed to create hosts.txt file"
@@ -511,6 +516,34 @@ clear_caches() {
 }
 
 #
+# preload_list: set up an LD_PRELOAD list with help from prefix
+#   $1 = prefix (we prepend $1/lib/ to entries w/o a "/" in them)
+#   $2 = input  (list of preload files sep'd by  ":")
+#   $3 = name of variable to put result in
+# sets: global variable $3 (using eval)
+#
+# example: preload_list /foo/lib "a.so:/tmp/lib/b.so" BAR
+#          will set $BAR to "/foo/lib/a.so:/tmp/lib.b.so"
+#
+preload_list() {
+    eval $3=         # init output variable to empty value to start
+    for preload_list_lcv in `echo $2 | sed -e 's/:/ /g'`;
+    do
+        preload_list_p=$preload_list_lcv
+
+        preload_list_slash=`echo $preload_list_p | sed -e 's@[^/]@@g'`
+        if [ x$preload_list_slash = x ]; then
+            preload_list_p="$1/$preload_list_p"
+        fi
+        if [ -z "`eval echo \\$$3`" ]; then
+            eval $3=$preload_list_p
+        else
+            eval $3="\$$3:$preload_list_p"
+        fi
+    done
+}
+
+#
 # do_mpirun: Run slurm/cobalt/mpich/openmpi command
 #
 # Arguments:
@@ -528,7 +561,7 @@ do_mpirun() {
     ppnode=$2
     bind_opt="$3"
     if [ ! -z "$4" ]; then
-        declare -a envs=("${!4}")
+        declare -a envs=(${!4-})
     else
         envs=()
     fi
