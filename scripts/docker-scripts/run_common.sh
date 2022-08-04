@@ -3,7 +3,7 @@
 run_carp() {
 	# configured for 16 ranks
 	mpirun -np 16 -ppn 16 \
-	 -env LD_PRELOAD /root/carp-install/lib/libdeltafs-preload.so \
+	 -env LD_PRELOAD $INSTALL_DIR/lib/libdeltafs-preload.so \
 	 -env VPIC_current_working_dir $VPICDIR \
 	 -env PRELOAD_Ignore_dirs : \
 	 -env PRELOAD_Deltafs_mntp particle \
@@ -102,5 +102,5 @@ run_carp() {
 	 -env RANGE_Reneg_interval $INTVL \
 	 -env RANGE_Pvtcnt_s1 256 \
 	 -env RANGE_Pvtcnt_s2 256 \
-	 -env RANGE_Pvtcnt_s3 256 -bind-to=none /root/carp-install/bin/range-runner -b 40 -s 2 -i $TRACEDIR -t 6000 file-per-particle trecon-part/turbulence $PARTCNT 100 1 512 1 1 $TRACECNT $TRACECNT 2>&1 | tee $LOGFILE
+	 -env RANGE_Pvtcnt_s3 256 -bind-to=none $INSTALL_DIR/bin/range-runner -b 40 -s 2 -i $TRACEDIR -t 6000 file-per-particle trecon-part/turbulence $PARTCNT 100 1 512 1 1 $TRACECNT $TRACECNT 2>&1 | tee $LOGFILE
 }

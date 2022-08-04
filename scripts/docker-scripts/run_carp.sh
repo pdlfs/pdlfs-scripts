@@ -2,8 +2,14 @@
 
 source run_common.sh
 
+INSTALL_DIR=/users/ankushj/repos/carp-umb-install/mpich-1804-2
+
+# /root/data for docker
+DATA_PREFIX=/root/data
+mkdir -p $DATA_PREFIX
+
 # directory to read trace from
-TRACEDIR=/root/data/particle.compressed.sample
+TRACEDIR=$DATA_PREFIX/particle.compressed.sample
 
 #number of timesteps to process from trace
 TRACECNT=3
@@ -15,7 +21,7 @@ INTVL=10000
 CARP_POLICY=InvocationPeriodic
 
 # directory for carp output
-SUITEDIR=/root/data/carp-jobdir/fig-5a-runtime
+SUITEDIR=$DATA_PREFIX/carp-jobdir/fig-5a-runtime
 
 setup_carp() {
 	EXPDIR=$BASEDIR
