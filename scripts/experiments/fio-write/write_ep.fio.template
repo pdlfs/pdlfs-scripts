@@ -1,0 +1,17 @@
+[global]
+
+directory=$DIROUT
+name=pdlfs_write
+description="simulates the write patterns of 32 pdlfs ranks. must be ran in parallel across hosts"
+ioengine=sync
+readwrite=write
+buffered=0
+numjobs=16
+loops=1
+end_fsync=1
+blocksize=$BLOCKSZ
+group_reporting
+; write_bw_log=bwlog.log
+
+[epoch]
+size=$FILESZ
