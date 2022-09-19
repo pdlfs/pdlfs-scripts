@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
-set -uxo
 
+source ../common.sh
 source run_common.sh
 
-INSTALL_DIR=/users/ankushj/repos/carp-umb-install/mpich-1804-2
+echo $INSTALL_DIR
 
 # /root/data for docker
 DATA_PREFIX=/mnt/lustre/carp-big-run

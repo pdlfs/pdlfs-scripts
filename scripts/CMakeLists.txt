@@ -67,6 +67,15 @@ if (all OR EXISTS "${UMBRELLA_BINARY_DIR}/vpic-prefix"
 endif()
 
 #
+# all carp scripts. these currently rely on certain datasets and hardcode storage clusters etc
+# install directly
+#
+
+install(DIRECTORY experiments DESTINATION scripts 
+  FILES_MATCHING PATTERN "*.sh"
+  PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_EXECUTE)
+
+#
 # end of scripts.   now we can configure and install...
 #
 
