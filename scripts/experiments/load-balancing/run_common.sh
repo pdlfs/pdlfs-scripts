@@ -1,9 +1,45 @@
 #!/usr/bin/env bash
 
+init_common_vars() {
+  THROTTLE_MB=0
+  DELTAFS_TC_RATE=0
+
+  DELTAFS_TC_SERIALIO=0
+  DELTAFS_TC_SYNCONCLOSE=0
+  DELTAFS_TC_IGNORESYNC=0
+
+  SKIPREALIO=0
+  DELTAFS_TC_DROPDATA=0
+}
+
+set_tc_params() {
+  if [ $THROTTLE_MB != 0 ]; then
+    SUITEDIR=$SUITEDIR-throttle-${THROTTLE_MB}m
+    DELTAFS_TC_RATE=$(( THROTTLE_MB * 1024 * 1024 ))
+  fi
+
+  if [ $SKIPREALIO == 1 ]; then
+    SUITEDIR=$SUITEDIR-fakeio
+    DELTAFS_TC_DROPDATA=1
+  fi
+}
+
+set_tc_params_dfs() {
+  if [ $THROTTLE_MB != 0 ]; then
+    BASEDIR=$BASEDIR-throttle-${THROTTLE_MB}m
+    DELTAFS_TC_RATE=$(( THROTTLE_MB * 1024 * 1024 ))
+  fi
+
+  if [ $SKIPREALIO == 1 ]; then
+    BASEDIR=$BASEDIR-fakeio
+    DELTAFS_TC_DROPDATA=1
+  fi
+}
+
 
 run_carp() {
 	# configured for 16 ranks
-  mpirun -np 512 -ppn 16 -f hosts.txt \
+  mpirun -np $NRANKS -ppn 16 -f hosts.txt \
 	 -env LD_PRELOAD "$INSTALL_DIR/lib/libdeltafs-preload.so" \
 	 -env VPIC_current_working_dir $VPICDIR \
 	 -env PRELOAD_Ignore_dirs : \
@@ -94,22 +130,22 @@ run_carp() {
 	 -env PLFSDIR_Env_name posix.unbufferedio \
 	 -env NEXUS_ALT_LOCAL na+sm \
 	 -env NEXUS_BYPASS_LOCAL 0 \
-	 -env DELTAFS_TC_RATE 0 \
-	 -env DELTAFS_TC_SERIALIO 0 \
-	 -env DELTAFS_TC_SYNCONCLOSE 0 \
-	 -env DELTAFS_TC_IGNORESYNC 0 \
-	 -env DELTAFS_TC_DROPDATA 0 \
+	 -env DELTAFS_TC_RATE $DELTAFS_TC_RATE \
+	 -env DELTAFS_TC_SERIALIO $DELTAFS_TC_SERIALIO \
+	 -env DELTAFS_TC_SYNCONCLOSE $DELTAFS_TC_SYNCONCLOSE \
+	 -env DELTAFS_TC_IGNORESYNC $DELTAFS_TC_IGNORESYNC \
+	 -env DELTAFS_TC_DROPDATA $DELTAFS_TC_DROPDATA \
 	 -env RANGE_Enable_dynamic 0 \
 	 -env RANGE_Reneg_policy $CARP_POLICY \
 	 -env RANGE_Reneg_interval $INTVL \
 	 -env RANGE_Pvtcnt_s1 $PVTCNT \
 	 -env RANGE_Pvtcnt_s2 $PVTCNT \
-	 -env RANGE_Pvtcnt_s3 $PVTCNT -bind-to=none $INSTALL_DIR/bin/range-runner -b 40 -s 2 -i $TRACEDIR -t 6000 -m $DUMP_MAP file-per-particle trecon-part/turbulence $PARTCNT 100 1 512 1 1 $EPCNT $EPCNT 2>&1 | tee $LOGFILE
+	 -env RANGE_Pvtcnt_s3 $PVTCNT -bind-to=none $INSTALL_DIR/bin/range-runner -b 40 -s 2 -i $TRACEDIR -t 6000 -m $DUMP_MAP file-per-particle trecon-part/turbulence $PARTCNT 100 1 $NRANKS 1 1 $EPCNT $EPCNT 2>&1 | tee $LOGFILE
 }
 
 run_deltafs() {
 	# configured for 16 ranks
-	mpirun -np 512 -ppn 16 -f hosts.txt \
+	mpirun -np $NRANKS -ppn 16 -f hosts.txt \
 	 -env LD_PRELOAD $INSTALL_DIR/lib/libdeltafs-preload.so \
 	 -env VPIC_current_working_dir $VPICDIR \
 	 -env PRELOAD_Ignore_dirs : \
@@ -199,10 +235,10 @@ run_deltafs() {
 	 -env PLFSDIR_Env_name posix.unbufferedio \
 	 -env NEXUS_ALT_LOCAL na+sm \
 	 -env NEXUS_BYPASS_LOCAL 0 \
-	 -env DELTAFS_TC_RATE 0 \
-	 -env DELTAFS_TC_SERIALIO 0 \
-	 -env DELTAFS_TC_SYNCONCLOSE 0 \
-	 -env DELTAFS_TC_IGNORESYNC 0 \
-	 -env DELTAFS_TC_DROPDATA 0 \
+	 -env DELTAFS_TC_RATE $DELTAFS_TC_RATE \
+	 -env DELTAFS_TC_SERIALIO $DELTAFS_TC_SERIALIO \
+	 -env DELTAFS_TC_SYNCONCLOSE $DELTAFS_TC_SYNCONCLOSE \
+	 -env DELTAFS_TC_IGNORESYNC $DELTAFS_TC_IGNORESYNC \
+	 -env DELTAFS_TC_DROPDATA $DELTAFS_TC_DROPDATA \
    -bind-to=none $INSTALL_DIR/bin/preload-runner -b 40 -s 2 -t 6000 file-per-particle trecon-part/turbulence $PARTCNT 100 1 512 1 1 $EPCNT $EPCNT 2>&1 | tee $LOGFILE
 }

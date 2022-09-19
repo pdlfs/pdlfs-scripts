@@ -1,12 +1,22 @@
 #!/usr/bin/env bash
 
-set -euxo pipefail
+set -uxo pipefail
 
 source run_common.sh
 
 INSTALL_DIR=/users/ankushj/repos/dfsumb-install
 JOBDIR=/mnt/lt20ad1/deltafs-jobdir
 EPCNT=1
+
+# default parameters
+NRANKS=512
+# particle count is in millions
+# 1M particles across 16 ranks = 65536 part/rank
+PARTCNT=$(( 3355 * 100 ))
+# number of timesteps to process from trace
+EPCNT=1
+# run index
+RIDX=1
 
 reset() {
   fd idx $BASEDIR -x rm
@@ -47,14 +57,34 @@ check_ok() {
 
 run_deltafs_baseline() {
   ALL_EPCNT=(1 3 6 9 12)
+  # ALL_EPCNT=( 12 )
+  ALL_RIDX=( 1 2 3 4 5 6 )
 
-  for EPCNT in "${ALL_EPCNT[@]}"; do
-    echo $EPCNT
-    BASEDIR=$JOBDIR/deltafs-baseline-3584M-ep$EPCNT
-    setup_deltafs
-    run_deltafs
-    reset
+  for RIDX in "${ALL_RIDX[@]}"; do
+    for EPCNT in "${ALL_EPCNT[@]}"; do
+      echo $EPCNT
+      BASEDIR=$JOBDIR/deltafs-baseline-3584M-ep$EPCNT-run$RIDX
+      check_ok $BASEDIR
+
+      if [ $? == 0 ] && [ !${FORCE+x} ]; then
+        echo ok
+      else
+        echo not ok
+        set_tc_params_dfs
+        setup_deltafs
+        run_deltafs || /bin/true
+        reset
+      fi
+    done
   done
 }
 
-run_deltafs_baseline
+init_common_vars
+
+# THROTTLE_MB=3
+# SKIPREALIO=1
+for i in `seq 5`;
+do
+  echo $i
+  run_deltafs_baseline
+done

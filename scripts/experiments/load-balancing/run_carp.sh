@@ -7,19 +7,25 @@ echo $INSTALL_DIR
 
 # /root/data for docker
 DATA_PREFIX=/mnt/lustre/carp-big-run
-JOB_DIR=/mnt/lt20ad2/carp-jobdir
+JOB_DIR=/mnt/lt20ad1/carp-jobdir
 # mkdir -p $DATA_PREFIX
 
 # directory to read trace from
 TRACEDIR=$DATA_PREFIX/particle.compressed.uniform
 
-#number of timesteps to process from trace
-EPCNT=1
-
 # default parameters
+NRANKS=512
+# particle count is in millions
+# 1M particles across 16 ranks = 65536 part/rank
+PARTCNT=$(( 3355 * 100 ))
+# number of timesteps to process from trace
+EPCNT=1
+# run index
 RIDX=1
+# reneg interval
 INTVL=500000
 PVTCNT=2048
+# per rank/epoch max particle limit (0: not set)
 DROPLIM=0
 
 # renegotiation policy: periodic
@@ -29,16 +35,14 @@ CARP_POLICY=InvocationPeriodic
 SUITEDIR=$JOB_DIR/unnamed-suite
 
 setup_carp() {
+  set_tc_params
+
 	EXPDIR=$BASEDIR
 	VPICDIR=$EXPDIR/vpic
 	PLFSDIR=$EXPDIR/plfs
 	INFODIR=$EXPDIR/exp-info
 
 	LOGFILE=$EXPDIR/log.txt
-
-	# particle count is in millions
-	# 1M particles across 16 ranks = 65536 part/rank
-  PARTCNT=$(( 3355 * 100 ))
 
 	mkdir -p $VPICDIR
 	mkdir -p $PLFSDIR/particle
@@ -72,7 +76,7 @@ run_carp_wparams() {
 
   check_ok $BASEDIR
 
-  if [ $? == 0 ]; then
+  if [ $? == 0 ] && [ !${FORCE+x} ]; then
     echo ok
   else
     echo not ok
@@ -84,8 +88,8 @@ run_carp_wparams() {
 }
 
 run_carp_wparamsuite() {
-  clean_storage
-  sleep 15
+  # clean_storage
+  # sleep 15
 
   for RIDX in "${REPEATS[@]}"; do
     for INTVL in "${INTVLS[@]}"; do
@@ -114,6 +118,19 @@ dump_map_allonce() {
   echo $DUMP_MAP
 }
 
+run_carp_micro() {
+  NRANKS=4
+  EPCNT=1
+  PARTCNT=$(( 26 * 100 )) # 6.5M * 4 ranks 
+  INTVL=500000
+  FORCE=1 # run even if prev run completed
+
+  DUMP_MAP=$(dump_map_repfirst $EPCNT)
+
+  SUITEDIR=$JOB_DIR/carp-micro
+  run_carp_wparams
+}
+
 run_carp_single_epoch() {
   EPCNT=1
 
@@ -137,7 +154,8 @@ run_carp_suite_wodrop_repfirst() {
   SUITEDIR=$JOB_DIR/carp-suite-repfirst
 
   EPCNTS=( 1 3 6 9 12 )
-  REPEATS=( 1 )
+  EPCNTS=( 12 )
+  REPEATS=( 1 2 3 4 5 6 )
   INTVLS=( 250000 500000 750000 1000000 )
   PVTCNTS=( 256 512 1024 2048 4096 8192 )
   PVTCNTS=( 2048 )
@@ -151,9 +169,15 @@ run_carp_suite_wodrop_repfirst() {
 
 run_carp_suite_wodrop_repfirst_allpvtcnt() {
   SUITEDIR=$JOB_DIR/carp-suite-repfirst-allpvtcnt
+  set_tc_params
+  SUITEDIR_FIXED=$SUITEDIR
 
+  echo $SUITEDIR
+  sleep 5
+
+  EPCNTS=( 1 3 6 9 )
   EPCNTS=( 12 )
-  REPEATS=( 4 )
+  REPEATS=( 2 )
   INTVLS=( 250000 500000 750000 1000000 )
   PVTCNTS=( 256 512 1024 2048 4096 8192 )
   DROPLIMS=( 0 )
@@ -180,10 +204,20 @@ run_carp_suite_wodrop_allonce() {
   done
 }
 
+init_common_vars
+
+# THROTTLE_MB=3
+# SKIPREALIO=1
+# run_carp_suite_wodrop_repfirst_allpvtcnt
+
+# suites: uncomment one
+# run_carp_micro
 # run_carp_single_epoch
 # run_carp_suite_wdrop
-# run_carp_suite_wodrop_repfirst
+run_carp_suite_wodrop_repfirst
 # run_carp_suite_wodrop_allonce
-run_carp_suite_wodrop_repfirst_allpvtcnt
+# run_carp_suite_wodrop_repfirst_allpvtcnt
+
+# debug
 # dump_map_repfirst 12
 # dump_map_allonce 12

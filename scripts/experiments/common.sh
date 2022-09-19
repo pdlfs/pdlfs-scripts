@@ -4,17 +4,30 @@
 set -ux
 
 get_install_dir() {
-  script_dir=$(realpath $0)
-  install_root=$script_dir
+  SCRIPT_DIR=$(realpath $0)
+  INSTALL_ROOT=$SCRIPT_DIR
 
-  while [ "$(basename $install_root)" != "scripts" ]; do
-    install_root=$(dirname $install_root)
+  while [ "$(basename $INSTALL_ROOT)" != "scripts" ]; do
+    INSTALL_ROOT=$(dirname $INSTALL_ROOT)
   done
 
-  install_root=$(dirname $install_root)
+  INSTALL_ROOT=$(dirname $INSTALL_ROOT)
 
-  echo $install_root
+  echo $INSTALL_ROOT
+}
+
+gen_hostfile() {
+  NHOSTS=$1
+  PREFIX=$2
+  SUFFIX=$3
+
+  echo "Generating hosts.txt with $NHOSTS hosts (Pref/Suff: $PREFIX/$SUFFIX)"
+  HOSTFILE=hosts.txt
+  rm $HOSTFILE || /bin/true
+
+  for i in $(seq 0 $(($NHOSTS - 1))); do
+    echo $PREFIX$i$SUFFIX >> $HOSTFILE
+  done
 }
  
-
 INSTALL_DIR=$(get_install_dir)
