@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
 
+source ../common.sh
+
+RTP_BENCH=$INSTALL_DIR/bin/rtp-bench-runner
 CSV_FILE=rtp-bench-runs-ipoib.csv
-RTP_BENCH=/users/ankushj/repos/carp-umbrella/build-mpich-18-2/deltafs-vpic-preload-prefix/src/deltafs-vpic-preload-build/tools/rtp_bench/rtp-bench-runner
-#NPIVOTS=256
 
 poll_cluster() {
   CLUSNAME=$1
@@ -27,6 +28,32 @@ poll_all() {
   poll_cluster carpib60 60
 
   cat hosts.*.txt > hosts.txt
+}
+
+run_one() {
+  nranks=$1
+  nrounds=$2
+  pvtcnt=$3
+  logfile=$4
+
+  mpirun -f hosts.txt -n $nranks \
+    -ppn 16 \
+   -env SHUFFLE_Mercury_proto bmi+tcp \
+   -env SHUFFLE_Subnet 10.94 \
+   $RTP_BENCH -n $nrounds -p $pvtcnt 2>&1 | tee $logfile
+}
+
+run_micro() {
+  NRANKS=8
+  NROUNDS=1
+  PVTCNT=256
+  LOGFILE=log.txt
+
+  echo "h0-dib:16" > hosts.txt
+
+  run_one $NRANKS $NROUNDS $PVTCNT $LOGFILE
+
+  rm hosts.txt
 }
 
 run_all() {
@@ -62,18 +89,6 @@ parse_logfile() {
   echo $nranks,$rounds,$npivots,$times >> $CSV_FILE
 }
 
-run_one() {
-  nranks=$1
-  nrounds=$2
-  pvtcnt=$3
-  logfile=$4
-
-  mpirun -f hosts.txt -n $nranks \
-    -ppn 16 \
-   -env SHUFFLE_Mercury_proto bmi+tcp \
-   -env SHUFFLE_Subnet 10.94 \
-   $RTP_BENCH -n $nrounds -p $pvtcnt 2>&1 | tee $logfile
-}
-
-run_all
+run_micro
+# run_all
 # poll_all

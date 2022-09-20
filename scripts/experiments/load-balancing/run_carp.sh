@@ -7,7 +7,7 @@ echo $INSTALL_DIR
 
 # /root/data for docker
 DATA_PREFIX=/mnt/lustre/carp-big-run
-JOB_DIR=/mnt/lt20ad1/carp-jobdir
+JOB_DIR=/mnt/lt20ad2/carp-jobdir
 # mkdir -p $DATA_PREFIX
 
 # directory to read trace from
@@ -204,20 +204,16 @@ run_carp_suite_wodrop_allonce() {
   done
 }
 
+gen_hostfile_from_ui
 init_common_vars
 
 # THROTTLE_MB=3
 # SKIPREALIO=1
-# run_carp_suite_wodrop_repfirst_allpvtcnt
 
 # suites: uncomment one
-# run_carp_micro
+run_carp_micro
 # run_carp_single_epoch
 # run_carp_suite_wdrop
-run_carp_suite_wodrop_repfirst
+# run_carp_suite_wodrop_repfirst
 # run_carp_suite_wodrop_allonce
 # run_carp_suite_wodrop_repfirst_allpvtcnt
-
-# debug
-# dump_map_repfirst 12
-# dump_map_allonce 12

@@ -2,10 +2,11 @@
 
 set -uxo pipefail
 
+source ../common.sh
 source run_common.sh
 
-INSTALL_DIR=/users/ankushj/repos/dfsumb-install
-JOBDIR=/mnt/lt20ad1/deltafs-jobdir
+# INSTALL_DIR=/users/ankushj/repos/dfsumb-install
+JOBDIR=/mnt/lt20ad2/deltafs-jobdir
 EPCNT=1
 
 # default parameters
@@ -32,10 +33,6 @@ setup_deltafs() {
 
 	LOGFILE=$EXPDIR/log.txt
 
-	# particle count is in millions
-	# 1M particles across 16 ranks = 65536 part/rank
-  PARTCNT=$(( 3355 * 100 ))
-
 	mkdir -p $VPICDIR
 	mkdir -p $PLFSDIR/particle
 	mkdir -p $INFODIR
@@ -55,14 +52,26 @@ check_ok() {
   fi
 }
 
+run_deltafs_micro() {
+  NRANKS=4
+  EPCNT=1
+  PARTCNT=$(( 26 * 100 )) # 6.5M * 4 ranks 
+  FORCE=1 # run even if prev run completed
+
+  BASEDIR=$JOBDIR/deltafs-micro
+  set_tc_params_dfs
+  setup_deltafs
+  run_deltafs || /bin/true
+  reset
+}
+
 run_deltafs_baseline() {
   ALL_EPCNT=(1 3 6 9 12)
-  # ALL_EPCNT=( 12 )
   ALL_RIDX=( 1 2 3 4 5 6 )
+  PARTCNT=$(( 3355 * 100 ))
 
   for RIDX in "${ALL_RIDX[@]}"; do
     for EPCNT in "${ALL_EPCNT[@]}"; do
-      echo $EPCNT
       BASEDIR=$JOBDIR/deltafs-baseline-3584M-ep$EPCNT-run$RIDX
       check_ok $BASEDIR
 
@@ -83,8 +92,7 @@ init_common_vars
 
 # THROTTLE_MB=3
 # SKIPREALIO=1
-for i in `seq 5`;
-do
-  echo $i
-  run_deltafs_baseline
-done
+
+# suites: uncomment one
+run_deltafs_micro
+# run_deltafs_baseline

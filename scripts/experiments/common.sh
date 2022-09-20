@@ -29,5 +29,40 @@ gen_hostfile() {
     echo $PREFIX$i$SUFFIX >> $HOSTFILE
   done
 }
+
+gen_hostfile_from_ui() {
+  if [ ! -f hosts.txt ]; then
+    echo "hosts.txt does not exist... creating"
+  else
+    echo "hosts.txt found! using it"
+    return 0
+  fi
+
+  nhosts=32
+  prefix=h
+  suffix=-dib:16
+
+  nhosts_in=""
+  prefix_in=""
+  suffix_in=""
+
+  read -p "nhosts [$nhosts]: " $nhosts_in
+  read -p "prefix [$prefix]: " $prefix_in
+  read -p "suffix [$suffix]: " $suffix_in
+
+  if [ "$nhosts_in" != "" ]; then
+    nhosts=$nhosts_in
+  fi
+
+  if [ "$prefix_in" != "" ]; then
+    prefix=$prefix_in
+  fi
+
+  if [ "$suffix_in" != "" ]; then
+    suffix=$suffix_in
+  fi
+
+  gen_hostfile $nhosts $prefix $suffix
+}
  
 INSTALL_DIR=$(get_install_dir)
