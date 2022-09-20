@@ -76,7 +76,7 @@ run_carp_wparams() {
 
   check_ok $BASEDIR
 
-  if [ $? == 0 ] && [ !${FORCE+x} ]; then
+  if [ $? == 0 ] && [[ ! -v FORCE ]]; then
     echo ok
   else
     echo not ok
