@@ -13,7 +13,7 @@ EPCNT=1
 NRANKS=512
 # particle count is in millions
 # 1M particles across 16 ranks = 65536 part/rank
-PARTCNT=$(( 3355 * 100 ))
+PARTCNT=$((3355 * 100))
 # number of timesteps to process from trace
 EPCNT=1
 # run index
@@ -26,16 +26,16 @@ reset() {
 }
 
 setup_deltafs() {
-	EXPDIR=$BASEDIR
-	VPICDIR=$EXPDIR/vpic
-	PLFSDIR=$EXPDIR/plfs
-	INFODIR=$EXPDIR/exp-info
+  EXPDIR=$BASEDIR
+  VPICDIR=$EXPDIR/vpic
+  PLFSDIR=$EXPDIR/plfs
+  INFODIR=$EXPDIR/exp-info
 
-	LOGFILE=$EXPDIR/log.txt
+  LOGFILE=$EXPDIR/log.txt
 
-	mkdir -p $VPICDIR
-	mkdir -p $PLFSDIR/particle
-	mkdir -p $INFODIR
+  mkdir -p $VPICDIR
+  mkdir -p $PLFSDIR/particle
+  mkdir -p $INFODIR
 }
 
 check_ok() {
@@ -53,12 +53,14 @@ check_ok() {
 }
 
 run_deltafs_micro() {
+  SUITEDIR=micro
+
   NRANKS=4
   EPCNT=1
-  PARTCNT=$(( 26 * 100 )) # 6.5M * 4 ranks 
-  FORCE=1 # run even if prev run completed
+  PARTCNT=$((26 * 100)) # 6.5M * 4 ranks
+  FORCE=1               # run even if prev run completed
 
-  BASEDIR=$JOBDIR/deltafs-micro
+  BASEDIR=$SUITEDIR/deltafs-micro
   set_tc_params_dfs
   setup_deltafs
   run_deltafs || /bin/true
@@ -66,13 +68,15 @@ run_deltafs_micro() {
 }
 
 run_deltafs_baseline() {
+  SUITEDIR=$JOBDIR/datascale-runs
+
   ALL_EPCNT=(1 3 6 9 12)
-  ALL_RIDX=( 1 2 3 4 5 6 )
-  PARTCNT=$(( 3355 * 100 ))
+  ALL_RIDX=(1 2 3 4 5 6)
+  PARTCNT=$((3355 * 100))
 
   for RIDX in "${ALL_RIDX[@]}"; do
     for EPCNT in "${ALL_EPCNT[@]}"; do
-      BASEDIR=$JOBDIR/deltafs-baseline-3584M-ep$EPCNT-run$RIDX
+      BASEDIR=$SUITEDIR/run$RIDX.epcnt$EPCNT
       check_ok $BASEDIR
 
       if [ $? == 0 ] && [ !${FORCE+x} ]; then
