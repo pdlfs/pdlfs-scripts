@@ -3,11 +3,9 @@
 source ../common.sh
 source run_common.sh
 
-echo $INSTALL_DIR
-
 # /root/data for docker
 DATA_PREFIX=/mnt/lustre/carp-big-run
-JOB_DIR=/mnt/lt20ad2/carp-jobdir
+JOB_DIR=/mnt/lt20ad1/carp-jobdir
 # mkdir -p $DATA_PREFIX
 
 # directory to read trace from
@@ -68,9 +66,9 @@ check_ok() {
 }
 
 run_carp_wparams() {
-  rname=run$RIDX.epcnt$EPCNT.intvl$INTVL.pvtcnt$PVTCNT.drop$DROPLIM
+  rname=run$RIDX.nranks$NRANKS.epcnt$EPCNT.intvl$INTVL.pvtcnt$PVTCNT.drop$DROPLIM
 
-  echo "Running $RIDX, $EPCNT, $INTVL, $PVTCNT, $DROPLIM, rundir: $rname"
+  echo "Running $RIDX, $NRANKS, $EPCNT, $INTVL, $PVTCNT, $DROPLIM, rundir: $rname"
 
   BASEDIR=$SUITEDIR/$rname
 
@@ -88,8 +86,8 @@ run_carp_wparams() {
 }
 
 run_carp_wparamsuite() {
-  # clean_storage
-  # sleep 15
+  clean_storage
+  sleep 15
 
   for RIDX in "${REPEATS[@]}"; do
     for INTVL in "${INTVLS[@]}"; do
@@ -154,16 +152,38 @@ run_carp_suite_wodrop_repfirst() {
   SUITEDIR=$JOB_DIR/carp-suite-repfirst
 
   EPCNTS=( 1 3 6 9 12 )
-  EPCNTS=( 12 )
   REPEATS=( 1 2 3 4 5 6 )
   INTVLS=( 250000 500000 750000 1000000 )
+  INTVLS=( 750000 1000000 )
   PVTCNTS=( 256 512 1024 2048 4096 8192 )
   PVTCNTS=( 2048 )
   DROPLIMS=( 0 )
 
   for EPCNT in "${EPCNTS[@]}"; do
     DUMP_MAP=$(dump_map_repfirst $EPCNT)
+    echo $NRANKS, $EPCNT
     run_carp_wparamsuite
+  done
+}
+
+run_carp_suite_wodrop_repfirst_scaleranks() {
+  SUITEDIR=$JOB_DIR/carp-suite-repfirst-scaleranks
+
+  ALL_NRANKS=( 64 128 256 )
+  EPCNTS=( 1 3 6 9 12 )
+  REPEATS=( 1 2 3 4 5 6 )
+  REPEATS=( 1 2 3 )
+  INTVLS=( 250000 500000 750000 1000000 )
+  INTVLS=( 1000000 )
+  PVTCNTS=( 2048 )
+  DROPLIMS=( 0 )
+
+  for NRANKS in "${ALL_NRANKS[@]}"; do
+    for EPCNT in "${EPCNTS[@]}"; do
+      DUMP_MAP=$(dump_map_repfirst $EPCNT)
+      echo $NRANKS, $EPCNT
+      run_carp_wparamsuite
+    done
   done
 }
 
@@ -215,5 +235,6 @@ run_carp_micro
 # run_carp_single_epoch
 # run_carp_suite_wdrop
 # run_carp_suite_wodrop_repfirst
+# run_carp_suite_wodrop_repfirst_scaleranks
 # run_carp_suite_wodrop_allonce
 # run_carp_suite_wodrop_repfirst_allpvtcnt

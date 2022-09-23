@@ -71,6 +71,7 @@ run_carp() {
 	 -env PRELOAD_Enable_bloomy 0 \
 	 -env PRELOAD_Enable_wisc 0 \
 	 -env PRELOAD_Particle_buf_size 2097152 \
+	 -env PRELOAD_Particle_extra_size 0 \
 	 -env PRELOAD_Number_particles_per_rank 7000000 \
 	 -env PRELOAD_Epoch_max_writes $DROPLIM \
 	 -env SHUFFLE_Mercury_proto bmi+tcp \
@@ -132,19 +133,18 @@ run_carp() {
 	 -env DELTAFS_TC_IGNORESYNC $DELTAFS_TC_IGNORESYNC \
 	 -env DELTAFS_TC_DROPDATA $DELTAFS_TC_DROPDATA \
 	 -env PRELOAD_Enable_CARP 1 \
-	 -env PRELOAD_Filename_size 8 \
-	 -env PRELOAD_Filedata_size 48 \
-	 -env PRELOAD_Particle_id_size 8 \
-	 -env PRELOAD_Particle_indexed_attr_size 4 \
-	 -env PRELOAD_Particle_indexed_attr_offset 0 \
+   -env PRELOAD_Filename_size 8 \
+   -env PRELOAD_Filedata_size 48 \
+   -env PRELOAD_Particle_id_size 8 \
+   -env PRELOAD_Particle_indexed_attr_size 4 \
+   -env PRELOAD_Particle_indexed_attr_offset 0 \
 	 -env RANGE_Enable_dynamic 0 \
 	 -env RANGE_Oob_size 512 \
 	 -env RANGE_Reneg_policy $CARP_POLICY \
 	 -env RANGE_Reneg_interval $INTVL \
 	 -env RANGE_Pvtcnt_s1 $PVTCNT \
 	 -env RANGE_Pvtcnt_s2 $PVTCNT \
-	 -env RANGE_Pvtcnt_s3 $PVTCNT \
-   -bind-to=none $INSTALL_DIR/bin/range-runner -b 48 -s 2 -i $TRACEDIR -t 6000 -m $DUMP_MAP file-per-particle trecon-part/turbulence $PARTCNT 100 1 $NRANKS 1 1 $EPCNT $EPCNT 2>&1 | tee $LOGFILE
+	 -env RANGE_Pvtcnt_s3 $PVTCNT -bind-to=none $INSTALL_DIR/bin/range-runner -b 48 -i $TRACEDIR -t 6000 -m $DUMP_MAP file-per-particle trecon-part/turbulence $PARTCNT 100 1 $NRANKS 1 1 $EPCNT $EPCNT 2>&1 | tee $LOGFILE
 }
 
 run_deltafs() {
@@ -179,7 +179,7 @@ run_deltafs() {
 	 -env PRELOAD_Enable_bg_pause 0 \
 	 -env PRELOAD_Bg_threads 4 \
 	 -env PRELOAD_Enable_bloomy 0 \
-	 -env PRELOAD_Enable_CARP 1 \
+	 -env PRELOAD_Enable_CARP 0 \
 	 -env PRELOAD_Enable_wisc 0 \
 	 -env PRELOAD_Particle_buf_size 2097152 \
 	 -env PRELOAD_Particle_id_size 8 \
@@ -244,8 +244,5 @@ run_deltafs() {
 	 -env DELTAFS_TC_SYNCONCLOSE $DELTAFS_TC_SYNCONCLOSE \
 	 -env DELTAFS_TC_IGNORESYNC $DELTAFS_TC_IGNORESYNC \
 	 -env DELTAFS_TC_DROPDATA $DELTAFS_TC_DROPDATA \
-	 -env PRELOAD_Enable_CARP 0 \
-	 -env PRELOAD_Filename_size 8 \
-	 -env PRELOAD_Filedata_size 52 \
-   -bind-to=none $INSTALL_DIR/bin/preload-runner -b 52 -s 2 -t 6000 file-per-particle trecon-part/turbulence $PARTCNT 100 1 512 1 1 $EPCNT $EPCNT 2>&1 | tee $LOGFILE
+   -bind-to=none $INSTALL_DIR/bin/preload-runner -b 52 -t 6000 file-per-particle trecon-part/turbulence $PARTCNT 100 1 512 1 1 $EPCNT $EPCNT 2>&1 | tee $LOGFILE
 }

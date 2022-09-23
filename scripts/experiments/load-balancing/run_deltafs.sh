@@ -2,18 +2,17 @@
 
 set -uxo pipefail
 
-source ../common.sh
 source run_common.sh
 
-# INSTALL_DIR=/users/ankushj/repos/dfsumb-install
-JOBDIR=/mnt/lt20ad2/deltafs-jobdir
+INSTALL_DIR=/users/ankushj/repos/dfsumb-install
+JOBDIR=/mnt/lt20ad1/deltafs-jobdir
 EPCNT=1
 
 # default parameters
 NRANKS=512
 # particle count is in millions
 # 1M particles across 16 ranks = 65536 part/rank
-PARTCNT=$((3355 * 100))
+PARTCNT=$(( 3355 * 100 ))
 # number of timesteps to process from trace
 EPCNT=1
 # run index
@@ -26,16 +25,20 @@ reset() {
 }
 
 setup_deltafs() {
-  EXPDIR=$BASEDIR
-  VPICDIR=$EXPDIR/vpic
-  PLFSDIR=$EXPDIR/plfs
-  INFODIR=$EXPDIR/exp-info
+	EXPDIR=$BASEDIR
+	VPICDIR=$EXPDIR/vpic
+	PLFSDIR=$EXPDIR/plfs
+	INFODIR=$EXPDIR/exp-info
 
-  LOGFILE=$EXPDIR/log.txt
+	LOGFILE=$EXPDIR/log.txt
 
-  mkdir -p $VPICDIR
-  mkdir -p $PLFSDIR/particle
-  mkdir -p $INFODIR
+	# particle count is in millions
+	# 1M particles across 16 ranks = 65536 part/rank
+  PARTCNT=$(( 3355 * 100 ))
+
+	mkdir -p $VPICDIR
+	mkdir -p $PLFSDIR/particle
+	mkdir -p $INFODIR
 }
 
 check_ok() {
@@ -57,13 +60,13 @@ run_deltafs_micro() {
 
   NRANKS=4
   EPCNT=1
-  PARTCNT=$((26 * 100)) # 6.5M * 4 ranks
-  FORCE=1               # run even if prev run completed
+  PARTCNT=$(( 26* 100 ))# 6.5M * 4 ranks
+  FORCE=1 # run even if prev run completed
 
   BASEDIR=$SUITEDIR/deltafs-micro
   set_tc_params_dfs
   setup_deltafs
-  run_deltafs || /bin/true
+  run_deltafs
   reset
 }
 
@@ -71,11 +74,12 @@ run_deltafs_baseline() {
   SUITEDIR=$JOBDIR/datascale-runs
 
   ALL_EPCNT=(1 3 6 9 12)
-  ALL_RIDX=(1 2 3 4 5 6)
-  PARTCNT=$((3355 * 100))
+  # ALL_EPCNT=( 12 )
+  ALL_RIDX=( 1 2 3 4 5 6 )
 
   for RIDX in "${ALL_RIDX[@]}"; do
     for EPCNT in "${ALL_EPCNT[@]}"; do
+      echo $EPCNT
       BASEDIR=$SUITEDIR/run$RIDX.epcnt$EPCNT
       check_ok $BASEDIR
 
@@ -92,11 +96,40 @@ run_deltafs_baseline() {
   done
 }
 
+run_deltafs_scaleranks() {
+  SUITEDIR=$JOBDIR/rankscale-runs
+
+  ALL_EPCNT=( 1 3 6 9 12 )
+  # ALL_EPCNT=( 12 )
+  ALL_NRANKS=( 64 128 256 )
+  ALL_RIDX=( 1 2 3 )
+
+  for RIDX in "${ALL_RIDX[@]}"; do
+    for NRANKS in "${ALL_NRANKS[@]}"; do
+      for EPCNT in "${ALL_EPCNT[@]}"; do
+        echo $EPCNT
+        BASEDIR=$SUITEDIR/run$RIDX.nranks$NRANKS.epcnt$EPCNT
+        echo $BASEDIR
+        check_ok $BASEDIR
+
+        if [ $? == 0 ] && [ !${FORCE+x} ]; then
+          echo ok
+        else
+          echo not ok
+          set_tc_params_dfs
+          setup_deltafs
+          run_deltafs || /bin/true
+          reset
+        fi
+      done
+    done
+  done
+}
+
 init_common_vars
 
 # THROTTLE_MB=3
 # SKIPREALIO=1
-
-# suites: uncomment one
 run_deltafs_micro
-# run_deltafs_baseline
+#run_deltafs_baseline
+#run_deltafs_scaleranks
