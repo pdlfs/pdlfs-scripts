@@ -35,24 +35,6 @@
 #
 
 #
-# number of frames/epochs for VPIC runs
-# default: 25
-#
-vpic_epochs=${vpic_epochs:-25}
-
-#
-# number of time steps for VPIC runs
-# default: 2500
-#
-vpic_steps=${vpic_steps:-2500}
-
-#
-# if a read phase should follow a write phase
-# default: 0
-#
-vpic_do_querying=${vpic_do_querying:-0}
-
-#
 # vpic_do_run: run a vpic experiment
 #
 # uses: $dfsu_prefix, $jobdir, $exp_tag, $bbdir, $cores, $nodes, $logfile, 

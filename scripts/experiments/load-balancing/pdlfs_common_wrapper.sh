@@ -31,6 +31,7 @@ dump_map_allonce() {
 
 init_carp() {
   # preload
+  XX_CARP_ON=1
   XX_FNAME_SIZE=8
   XX_FDATA_SIZE=48
   # TODO: next two properties are deprecated
@@ -46,7 +47,7 @@ init_carp() {
   XX_CARP_POLICY=InvocationPeriodic
   XX_USE_RANGEDB=1
   XX_CARP_INTVL=$carp_intvl
-  XX_CARP_OOBSZ=0
+  XX_CARP_OOBSZ=512
   XX_RTP_PVTCNT=$carp_pvtcnt
 
   # shuffle
@@ -59,6 +60,7 @@ init_carp() {
 }
 
 init_deltafs() {
+  XX_CARP_ON=0
   XX_FNAME_SIZE=8
   XX_FDATA_SIZE=52
   # TODO: next two properties are deprecated
@@ -87,7 +89,7 @@ init_all() {
 
   vpic_nranks=${vpic_nranks:-4}
   vpic_nodes=${vpic_nodes:-1}
-  vpic_ppn=${vpic_ppn:16}
+  vpic_ppn=${vpic_ppn:-16}
   vpic_partcnt=${vpic_partcnt:-$(million 1)}
 
   jobdir_root=${jobdir_root:-/tmp}
@@ -95,13 +97,12 @@ init_all() {
   jobname=${jobname:-unnamed-job}
 
   jobdir=$jobdir_root/${exp_type}_jobdir/$jobname
-  jobdir=$jobdir_pref/$jobname
 
   vpic_cpubind="none"
 
-  if [ "$exp_type" == "carp"]; then
+  if [ "$exp_type" == "carp" ]; then
     init_carp
-  else;
+  else
     init_deltafs
   fi
 
@@ -132,10 +133,10 @@ gen_jobdeck() {
   ty=1
   tz=1
 
-  if [ "$exptype" == "carp" ]; then
+  if [ "$exp_type" == "carp" ]; then
     jobbin=$dfsu_prefix/bin/range-runner
     jobsimargs="-i $carp_tracedir -t 6000 -m $carp_dumpmap"
-  else;
+  else
     jobbin=$dfsu_prefix/bin/preload-runner
     jobsimargs=""
   fi
@@ -147,28 +148,24 @@ gen_jobdeck() {
 }
 
 gen_exptag() {
-  exp_tag=$exptype.run$job_ridx
+  exp_tag=$exp_type.run$job_ridx
   exp_tag=${exp_tag}.nranks$vpic_nranks
   exp_tag=${exp_tag}.epcnt$vpic_epochs
 
-  if [ "$exptype" == "carp" ]; then
+  if [ "$exp_type" == "carp" ]; then
     exp_tag=${exp_tag}.intvl$carp_intvl
     exp_tag=${exp_tag}.pvtcnt$carp_pvtcnt
   fi
 }
 
 run_exp() {
-  echo "- INFO - Running exp type: $exp_type"
+  echo "-INFO- Running exp type: $exp_type"
 
   gen_exptag
   init_all
   gen_jobdeck # jobdeck is now defined
 
-  echo $exptype
-  echo $jobdeck
-  echo $exp_tag
-  echo $XX_FDATA_SIZE
-  # vpic_do_run $exptype $p $ppn "$jobdeck" $exp_tag $prelib $prelibq
+  vpic_do_run $exp_type $p $ppn "$jobdeck" $exp_tag $prelib $prelibq
 }
 
 run_carp_micro() {
@@ -181,9 +178,7 @@ run_carp_micro() {
   vpic_nranks=4
   vpic_nodes=1
   vpic_ppn=16
-  vpic_epochs=1
-  carp_intvl=500000
-  carp_pvtcnt=512
+  vpic_epochs=1 carp_intvl=500000 carp_pvtcnt=512
   carp_dumpmap=$(dump_map_repfirst $vpic_epochs)
   vpic_partcnt=$(million 26)
 
@@ -206,4 +201,5 @@ run_deltafs_micro() {
   run_exp
 }
 
-run_carp_micro
+# run_carp_micro
+run_deltafs_micro
