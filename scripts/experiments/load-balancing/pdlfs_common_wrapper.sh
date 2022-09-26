@@ -206,7 +206,10 @@ check_exp_ok() {
 
 run_exp_until_ok() {
   init_all
-  run_exp
+
+  if [ "$RUN_ATLEAST_ONCE" = "1" ]; then
+    run_exp
+  fi
 
   arg_ret=0
   check_exp_ok || arg_ret=$?

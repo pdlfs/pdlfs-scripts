@@ -20,13 +20,13 @@ run_nw_single() {
   sleep 30
 }
 
-run_nw_suite() {
+run_nw_suite_rankscale() {
   arg_exp_type=deltafs
   arg_jobname=network-suite
 
-  arg_all_job_ridx=( 1 2 3 4 5 6 )
+  arg_all_job_ridx=( 1 2 3 )
   arg_all_nnodes=( 1 2 4 8 16 32 )
-  arg_all_epochs=( 1 3 6 9 12 )
+  arg_all_epochs=( 12 )
   arg_vpic_ppn=16
 
   for arg_job_ridx in "${arg_all_job_ridx[@]}"; do
@@ -39,4 +39,23 @@ run_nw_suite() {
   done
 }
 
-run_nw_suite
+run_nw_suite_datascale() {
+  arg_exp_type=deltafs
+  arg_jobname=network-suite
+
+  arg_all_job_ridx=( 2 3 )
+  arg_all_nnodes=( 32 )
+  arg_all_epochs=( 1 3 6 9 12 )
+  arg_vpic_ppn=16
+
+  for arg_job_ridx in "${arg_all_job_ridx[@]}"; do
+    for arg_vpic_nodes in "${arg_all_nnodes[@]}"; do
+      for arg_vpic_epochs in "${arg_all_epochs[@]}"; do
+        run_nw_single
+      done
+    done
+  done
+}
+
+run_nw_suite_rankscale
+run_nw_suite_datascale
