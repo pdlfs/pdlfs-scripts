@@ -6,31 +6,95 @@ carp_tracedir=$carp_tracedir_pref/particle.compressed.uniform
 
 source ./pdlfs_common_wrapper.sh
 
+#
+# XXX: Some notes: XX_NX_1HOP is temporary and is added for a 
+# temporary uncommitted patch to deltafs-nexus
+#
+
 run_exp_common() {
+  echo -e "\n"
+
   arg_vpic_nranks=$(( arg_vpic_nodes * arg_vpic_ppn ))
   arg_vpic_partcnt_m=$( bc <<< $arg_vpic_nranks*6.55 )
   arg_vpic_partcnt=$(million $arg_vpic_partcnt_m)
 
-  RUN_ATLEAST_ONCE=0
+  RUN_ATLEAST_ONCE=1
   run_exp_until_ok
   clean_exp
-  sleep 30
+  sleep 5
+}
+
+run_shufonly_psm_single() {
+  arg_exp_type=deltafs
+  arg_jobname=network-suite-psm
+
+  XX_HG_PROTO="psm+psm"
+  XX_CARP_ON=0
+  XX_BYPASS_SHUFFLE=0
+  XX_BF_BITS=0
+  XX_IMD_RATELIMIT=0
+  XX_IMD_DROPDATA=1
+  XX_USE_PLAINDB=1
+
+  run_exp_common
 }
 
 run_shufonly_single() {
   arg_exp_type=deltafs
   arg_jobname=network-suite
 
+  XX_HG_PROTO="bmi+tcp"
+  XX_CARP_ON=0
+  XX_BYPASS_SHUFFLE=0
+  XX_BF_BITS=0
   XX_IMD_RATELIMIT=0
   XX_IMD_DROPDATA=1
+  XX_USE_PLAINDB=1
 
   run_exp_common
 }
+
+run_shufonly_bigrpc_single() {
+  arg_exp_type=deltafs
+  arg_jobname=network-suite-bigrpc
+
+  XX_HG_PROTO="bmi+tcp"
+  XX_CARP_ON=0
+  XX_BYPASS_SHUFFLE=0
+  XX_BF_BITS=0
+  XX_IMD_RATELIMIT=0
+  XX_IMD_DROPDATA=1
+  XX_USE_PLAINDB=1
+
+  XX_RPC_BUF=65536
+  run_exp_common
+  XX_RPC_BUF=32768
+}
+
+run_shufonly_1hopsim_single() {
+  arg_exp_type=deltafs
+  arg_jobname=network-suite-1hopsim
+
+  XX_HG_PROTO="bmi+tcp"
+  XX_CARP_ON=0
+  XX_BYPASS_SHUFFLE=0
+  XX_BF_BITS=0
+  XX_IMD_RATELIMIT=0
+  XX_IMD_DROPDATA=1
+  XX_USE_PLAINDB=1
+
+  XX_NX_1HOP=1
+  run_exp_common
+  XX_NX_1HOP=0
+}
+
 
 run_ioonly_single() {
   arg_exp_type=deltafs
   arg_jobname=dfs-ioonly
 
+  XX_HG_PROTO="bmi+tcp"
+  XX_CARP_ON=0
   XX_BYPASS_SHUFFLE=1
   XX_BF_BITS=0
   XX_IMD_RATELIMIT=0
@@ -44,9 +108,12 @@ run_dfs_seq_single() {
   arg_exp_type=deltafs
   arg_jobname=dfs-seq-suite
 
+  XX_HG_PROTO="bmi+tcp"
+  XX_CARP_ON=0
+  XX_BYPASS_SHUFFLE=0
+  XX_BF_BITS=0
   XX_IMD_RATELIMIT=0
   XX_IMD_DROPDATA=0
-  XX_BF_BITS=0
   XX_USE_PLAINDB=1
 
   run_exp_common
@@ -56,28 +123,54 @@ run_dfs_reg_single() {
   arg_exp_type=deltafs
   arg_jobname=dfs-reg-suite
 
+  XX_HG_PROTO="bmi+tcp"
+  XX_CARP_ON=0
+  XX_BYPASS_SHUFFLE=0
+  XX_BF_BITS=12
   XX_IMD_RATELIMIT=0
   XX_IMD_DROPDATA=0
-  XX_BF_BITS=0
-  XX_USE_PLAINDB=1
+  XX_USE_PLAINDB=0
 
   run_exp_common
 }
 
 run_carp_single() {
-  echo "CARP: what params to use??"
+  arg_exp_type=carp
+  arg_jobname=carp-suite
+
+  all_intvl=( 750000 1000000 )
+  all_pvtcnt=( 1024 2048 )
+
+  XX_HG_PROTO="bmi+tcp"
+  XX_CARP_ON=1
+  XX_BYPASS_SHUFFLE=0
+  XX_BF_BITS=0
+  XX_IMD_RATELMIT=0
+  XX_IMD_DROPDATA=0
+  XX_USE_RANGEDB=1
+
+  for carp_intvl in "${all_intvl[@]}"; do
+    for carp_pvtcnt in "${all_pvtcnt[@]}"; do
+      run_exp_common
+      echo $(dump_map_repfirst $arg_vpic_epochs)
+    done
+  done
 }
 
 run_suite_single() {
-  run_shufonly_single
-  run_ioonly_single
-  run_dfs_seq_single
-  run_dfs_reg_single
-  run_carp_single
+  # run_shufonly_psm_single
+  # run_shufonly_single
+  run_shufonly_bigrpc_single
+  run_shufonly_1hopsim_single
+  # run_ioonly_single
+  # run_dfs_seq_single
+  # run_dfs_reg_single
+  # run_carp_single
 }
 
 run_suite_rankscale() {
   arg_all_job_ridx=( 1 2 3 )
+  arg_all_nnodes=( 1 2 4 8 16 32 )
   arg_all_nnodes=( 1 2 4 8 16 32 )
   arg_all_epochs=( 12 )
   arg_vpic_ppn=16
@@ -85,6 +178,7 @@ run_suite_rankscale() {
   for arg_job_ridx in "${arg_all_job_ridx[@]}"; do
     for arg_vpic_nodes in "${arg_all_nnodes[@]}"; do
       for arg_vpic_epochs in "${arg_all_epochs[@]}"; do
+        arg_carp_dumpmap=$(dump_map_repfirst $arg_vpic_epochs)
         run_suite_single
       done
     done
@@ -107,4 +201,4 @@ run_suite_datascale() {
 }
 
 run_suite_rankscale
-run_suite_datascale
+# run_suite_datascale

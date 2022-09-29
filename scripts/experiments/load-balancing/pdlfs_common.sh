@@ -287,6 +287,7 @@ vpic_do_run() {
             "PLFSDIR_Ldb_force_l0" ${XX_LEVELDB_L0ONLY:-"0"}
             "PLFSDIR_Ldb_use_bf" ${XX_LEVELDB_WITHBF:-"0"}
             "PLFSDIR_Env_name" ${XX_ENV_NAME:-"posix.unbufferedio"}
+            "NEXUS_1H" ${XX_NX_1HOP:-"0"}
             "NEXUS_ALT_LOCAL" ${XX_NX_LOCAL:-"na+sm"}
             "NEXUS_BYPASS_LOCAL" ${XX_NX_ONEHG:-"1"}
             "DELTAFS_TC_RATE" ${XX_IMD_RATELIMIT:-"0"}
