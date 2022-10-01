@@ -35,6 +35,7 @@ dump_map_allonce() {
   echo $arg_carp_dumpmap
 }
 
+
 init_carp() {
   # preload
   XX_CARP_ON=1
@@ -85,12 +86,29 @@ init_deltafs() {
   XX_IMD_DROPDATA=${XX_IMD_DROPDATA:-0}
 }
 
-log_if_nodes_throttle() {
+#
+# argument: all nodes to add to blacklist, space sparated
+# 
+
+update_blacklist() {
+  blacklist=$1
+
+  if [[ "${exp_hosts_blacklist:-"none"}" == "none" ]]; then
+    return
+  fi
+
+  for node in $blacklist; do
+    message "-INFO- Blacklisting $node"
+    ssh $node "hostname | cut -d. -f 1" >> $exp_hosts_blacklist
+  done
+}
+
+log_throttling_nodes() {
   THROTTLE_SCRIPT=/users/ankushj/snips/scripts/log-throttlers.sh
 
   nnodes=$(cat $jobdir/hosts.txt | wc -l)
   all_nodes=$(cat $jobdir/hosts.txt | paste -sd,)
-  CHECK=$(do_mpirun $nnodes 1 "none" "" "$all_nodes" $THROTTLE_SCRIPT | tail -n+2)
+  CHECK=$(do_mpirun $nnodes 1 "none" "" "$all_nodes" $THROTTLE_SCRIPT | tail -n+2 | cut -d, -f1)
 
   echo $CHECK
 }
@@ -118,7 +136,7 @@ init_all() {
   arg_exp_type=${arg_exp_type:-misc-exp}
   arg_jobname=${arg_jobname:-unnamed-job}
 
-  jobdir=$arg_jobdir_root/${arg_exp_type}-jobdir/$arg_jobname
+  jobdir=$arg_jobdir_root/${arg_exp_type}-jobdir-throttlecheck/$arg_jobname
 
   vpic_cpubind="none"
 
@@ -190,21 +208,23 @@ run_exp() {
   exp_jobdir=$jobdir/$exp_tag
   rm $exp_jobdir/*txt || /bin/true
 
-  THROTTLE_CHECK=$(log_if_nodes_throttle)
-  if [[ "$THROTTLE_CHECK" != "" ]]; then
+  throttling_nodes=$(log_throttling_nodes)
+  if [[ "$throttling_nodes" != "" ]]; then
     echo "-INFO- Throttling nodes detected. Refusing to launch experiment"
-    exit 1
+    update_blacklist "$throttling_nodes"
+    return
   fi
 
   vpic_do_run $arg_exp_type $p $ppn "$jobdeck" $exp_tag $prelib $prelibq
   clean_exp
   sleep 30
 
-  THROTTLE_CHECK=$(log_if_nodes_throttle)
-  if [[ "$THROTTLE_CHECK" != "" ]]; then
+  throttling_nodes=$(log_throttling_nodes)
+  if [[ "$throttling_nodes" != "" ]]; then
     echo "-INFO- Throttling nodes detected. Invalidating experiment."
     mv $jobdir/$exp_tag/log.txt $jobdir/$exp_tag/invalidated.log.txt
-    exit 1
+    update_blacklist "$throttling_nodes"
+    return
   fi
 }
 
@@ -275,7 +295,7 @@ run_carp_micro() {
   FORCE=1 # run even if prev run completed
 
   arg_exp_type=carp
-  arg_jobname=carp_micro
+  arg_jobname=carp-micro
 
   arg_job_ridx=1
   arg_vpic_nranks=4
@@ -287,14 +307,15 @@ run_carp_micro() {
   arg_carp_dumpmap=$(dump_map_repfirst $arg_vpic_epochs)
   arg_vpic_partcnt=$(million 26)
 
-  run_exp
+  RUN_ATLEAST_ONCE=1
+  run_exp_until_ok
 }
 
 run_deltafs_micro() {
   FORCE=1 # run even if prev run completed
 
   arg_exp_type=deltafs
-  arg_jobname=carp_micro
+  arg_jobname=deltafs-micro
 
   arg_job_ridx=1
   arg_vpic_nranks=4
@@ -303,5 +324,6 @@ run_deltafs_micro() {
   arg_vpic_epochs=1
   arg_vpic_partcnt=$(million 26)
 
-  run_exp
+  RUN_ATLEAST_ONCE=1
+  run_exp_until_ok
 }

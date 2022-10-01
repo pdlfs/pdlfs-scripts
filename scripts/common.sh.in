@@ -450,6 +450,12 @@ gen_hostfile() {
             die "failed to create hosts.txt file"
     fi
 
+    if [ ${exp_hosts_blacklist:-"none"} != "none" ]; then
+      message "-INFO- removing hosts in $exp_hosts_blacklist from hosts.txt"
+      grep -v -f $exp_hosts_blacklist $jobdir/hosts.txt > tmp
+      mv tmp $jobdir/hosts.txt
+    fi
+
     # Populate a variable with hosts
     all_nodes=$(cat ${jobdir}/hosts.txt)
     num_all_nodes=$(cat ${jobdir}/hosts.txt | tr ',' '\n' | sort | wc -l)
