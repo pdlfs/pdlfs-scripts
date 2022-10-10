@@ -94,12 +94,25 @@ update_blacklist() {
   blacklist=$1
 
   if [[ "${exp_hosts_blacklist:-"none"}" == "none" ]]; then
+    message "-INFO- No blacklist file setup!!!"
     return
   fi
 
   for node in $blacklist; do
-    message "-INFO- Blacklisting $node"
-    ssh $node "hostname | cut -d. -f 1" >> $exp_hosts_blacklist
+
+    if [[ "$node" == h* ]]; then
+      node_alias=$node
+    else
+      node_alias=$( ssh $node "hostname | cut -d. -f 1" )
+    fi
+
+    host_suffix_tmp=${host_suffix:-"none"}
+    if [[ "$host_suffix_tmp" != "none" ]]; then
+      node_alias=$node_alias-$host_suffix_tmp
+    fi
+
+    message "-INFO- Blacklisting $node_alias"
+    echo $node_alias >> $exp_hosts_blacklist
   done
 }
 
@@ -277,6 +290,7 @@ run_exp_until_ok() {
 
   if [ "$RUN_ATLEAST_ONCE" = "1" ]; then
     clean_exp
+    sleep 600
     run_exp
   fi
 
@@ -284,6 +298,8 @@ run_exp_until_ok() {
   check_exp_ok || arg_ret=$?
 
   while [ "$arg_ret" != "0" ]; do
+    clean_exp
+    sleep 600
     run_exp
 
     arg_ret=0

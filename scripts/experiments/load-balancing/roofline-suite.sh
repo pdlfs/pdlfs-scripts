@@ -1,7 +1,7 @@
 #!/bin/bash -eu
 
 pdl_cluster_name=$(hostname | cut -d. -f 2)
-arg_jobdir_root=/mnt/lt20ad1
+arg_jobdir_root=/mnt/lt20ad2
 carp_tracedir_pref=/mnt/lustre/carp-big-run
 carp_tracedir=$carp_tracedir_pref/particle.compressed.uniform
 
@@ -11,15 +11,17 @@ init_suite() {
   SCRIPT=$(realpath "$0")
   SCRIPTPATH=$(dirname "$SCRIPT")
 
+  host_suffix=dib
   exp_hosts_blacklist=$SCRIPTPATH/hosts-$pdl_cluster_name-exclude.txt
-  if [ -f "$exp_hosts_blacklist" ]; then
-    message "-INFO- Found hosts-exclude.txt at $exp_hosts_blacklist. Using it."
-  else
-    touch $exp_hosts_blacklist
-    message "-INFO- Creating hosts-exclude.txt at $exp_hosts_blacklist. Using it."
-  fi
+  exp_hosts_blacklist_bootstrap=$SCRIPTPATH/hosts-$pdl_cluster_name-exclude-bootstrap.txt
 
-  run_deltafs_micro
+  rm $exp_hosts_blacklist || /bin/true
+  touch $exp_hosts_blacklist
+
+  if [ -f "$exp_hosts_blacklist_bootstrap" ]; then
+    message "-INFO- Bootstrapping blacklist with $exp_hosts_blacklist_bootstrap"
+    update_blacklist "$(cat $exp_hosts_blacklist_bootstrap)"
+  fi
 }
 
 #
@@ -37,7 +39,7 @@ run_exp_common() {
   RUN_ATLEAST_ONCE=0
   run_exp_until_ok
   clean_exp
-  sleep 5
+  sleep 300
 }
 
 run_shufonly_psm_single() {
@@ -175,7 +177,7 @@ run_carp_single() {
   arg_jobname=carp-suite
 
   all_intvl=( 750000 1000000 )
-  all_pvtcnt=( 1024 2048 )
+  all_pvtcnt=( 512 1024 2048 )
 
   XX_HG_PROTO="bmi+tcp"
   XX_CARP_ON=1
@@ -188,28 +190,28 @@ run_carp_single() {
   for carp_intvl in "${all_intvl[@]}"; do
     for carp_pvtcnt in "${all_pvtcnt[@]}"; do
       run_exp_common
-      echo $(dump_map_repfirst $arg_vpic_epochs)
     done
   done
 }
 
 run_suite_single() {
-  run_shufonly_psm_single
-  run_shufonly_single
-  run_shufonly_bigrpc_single
-  run_shufonly_1hopsim_single
-  run_shufonly_1hopsim_node2x_single
-  run_ioonly_single
-  run_dfs_seq_single
-  run_dfs_reg_single
-  # run_carp_single
+  # run_shufonly_psm_single
+  # run_shufonly_single
+  # run_shufonly_bigrpc_single
+  # run_shufonly_1hopsim_single
+  # run_shufonly_1hopsim_node2x_single
+  # run_ioonly_single
+  # run_dfs_seq_single
+  # run_dfs_reg_single
+  run_carp_single
 }
 
 run_suite_rankscale() {
   arg_all_job_ridx=( 1 2 3 )
-  arg_all_job_ridx=( 3 )
+  arg_all_job_ridx=( 4 5 6 )
+  # arg_all_job_ridx=( 7 8 9 )
   arg_all_nnodes=( 1 2 4 8 16 32 )
-  arg_all_nnodes=( 1 2 4 8 16 )
+  arg_all_nnodes=( 32 )
   arg_all_epochs=( 12 )
   arg_vpic_ppn=16
 
@@ -239,5 +241,5 @@ run_suite_datascale() {
 }
 
 init_suite
-# run_suite_rankscale
+run_suite_rankscale
 # run_suite_datascale
