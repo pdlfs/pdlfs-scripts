@@ -51,7 +51,7 @@ init_carp() {
   XX_NO_PRE_BAR=0
 
   # carp
-  XX_CARP_POLICY=InvocationPeriodic
+  XX_CARP_POLICY=${XX_CARP_POLICY:-InvocationPeriodic}
   XX_USE_RANGEDB=1
   XX_CARP_INTVL=$carp_intvl
   XX_CARP_OOBSZ=512

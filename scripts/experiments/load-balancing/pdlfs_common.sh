@@ -301,9 +301,8 @@ vpic_do_run() {
             "PRELOAD_Particle_id_size" ${XX_PID_SIZE:-"8"}
             "PRELOAD_Particle_indexed_attr_size" ${XX_IDXATTR_SIZE:-"4"}
             "PRELOAD_Particle_indexed_attr_offset" ${XX_IDXATTR_OFFSET:-"0"}
-            "RANGE_Enable_dynamic" ${XX_CARP_DYNTRIG:-"0"}
             "RANGE_Oob_size" ${XX_CARP_OOBSZ:-"512"}
-            "RANGE_Dynamic_threshold" ${XX_CARP_DYNLIM:-"2.0"}
+            "RANGE_Reneg_policy" ${XX_CARP_POLICY:-"InvocationIntraEpoch"}
             "RANGE_Reneg_interval" ${XX_CARP_INTVL:-"250000"}
             "RANGE_Pvtcnt_s1" ${XX_RTP_PVTCNT:-"256"}
             "RANGE_Pvtcnt_s2" ${XX_RTP_PVTCNT:-"256"}
