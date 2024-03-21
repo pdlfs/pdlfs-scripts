@@ -122,9 +122,9 @@ common_init() {
   #  3. look to see if we are already running under openmpi or mpich
   # otherwise we look for a bare MPI environment like this:
   #  4. allow users to use $MPIRUN to specify a specific MPI to use
-  #  5. look for mpirun.mpich
-  #  6. look for mpirun.openmpi
-  #  7. look for plain mpirun and see if it is mpich or openmpi
+  #  5. look for plain mpirun and see if it is mpich or openmpi
+  #  6. look for mpirun.mpich
+  #  7. look for mpirun.openmpi
   #  8. give up
   #
   if [ x${JOBENV-} != x ]; then     # allow user to hardwire a jobenv
@@ -178,16 +178,18 @@ common_init() {
     else
       die "MPIRUN: cannot determine MPI type for cmd $MPIRUN - ABORTING"
     fi
+  elif [ `which mpirun 2>/dev/null` ]; then
+    if [ "`mpirun --version 2>&1 | fgrep 'open-mpi.org'`" ]; then
+      jobenv=openmpi jobruncli=openmpi jobruncmd=mpirun
+    elif [ "`mpirun --version 2>&1 | fgrep 'HYDRA'`" ]; then
+      jobenv=mpich jobruncli=mpich jobruncmd=mpirun
+    else
+      die "mpirun: cannot determine MPI type for cmd 'mpirun' - ABORTING"
+    fi
   elif [ `which mpirun.mpich 2>/dev/null` ]; then
     jobenv=mpich jobruncli=mpich jobruncmd=mpirun.mpich
   elif [ `which mpirun.openmpi 2>/dev/null` ]; then
     jobenv=openmpi jobruncli=openmpi jobruncmd=mpirun.openmpi
-  elif [ `which mpirun 2>/dev/null` ]; then
-    if [ "`mpirun --version 2>&1 | fgrep 'open-mpi.org'`" ]; then
-      jobenv=openmpi jobruncli=openmpi jobruncmd=mpirun
-    else
-      jobenv=mpich jobruncli=mpich jobruncmd=mpirun
-    fi
   else
     die "common.sh UNABLE TO DETERMINE ENV - ABORTING"
   fi
@@ -198,7 +200,8 @@ common_init() {
   # check for newer cpu binding flag for openmpi
   #
   if [ $jobruncli = openmpi ]; then
-    if [ "`$jobruncmd --help 2>&1 | fgrep -e '--bind-to '`" ]; then
+    if [ "`( $jobruncmd --help ; $jobruncmd --help -V ) 2>&1 | \
+                                           fgrep -e '--bind-to '`" ]; then
       message "-INFO- common_init: openmpi supports new --bind-to flag"
       openmpi_newbind=1
     else
