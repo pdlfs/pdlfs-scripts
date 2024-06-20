@@ -51,8 +51,10 @@
 #    if $JOBENV is set, we use:
 #       $JOBRUNCLI - command line interface to job run command
 #       $JOBRUNCMD - command to run jobs
-#  $JOBHOSTS - nodes to run jobs (default: localhost)
-#              (only used if not running on a Cray or an Emulab platform)
+#  $HOSTFILE - file with list of hosts we can run on (openmpi, mpich only)
+#              (overrides JOBHOSTS and Emulab host info)
+#  $JOBHOSTS - comma sep'd list of nodes to run jobs on (default: localhost)
+#              (only used if not running on a Cray or CMU Emulab platform)
 #  $MPIRUN - mpirun command to use (if not running under a scheduler)
 #
 #  Env running moab:
@@ -422,6 +424,14 @@ gen_hostfile() {
         # generates hostfile from PARTNAME or NODEFILE
         $dfsu_prefix/scripts/cobalt_nodefile $jobdir/hosts.txt || \
             die "failed to create hosts.txt file"
+
+    elif [ x${HOSTFILE-} != x ]; then
+
+        if [ ! -f "${HOSTFILE}" ]; then
+            die "missing HOSTFILE file ${HOSTFILE}"
+        fi
+        egrep -v '^#' ${HOSTFILE} > $jobdir/hosts.txt
+        message "-INFO- hosts.txt loaded from HOSTFILE file ${HOSTFILE}"
 
     elif [ -f "/share/testbed/bin/emulab-listall" ]; then
 
