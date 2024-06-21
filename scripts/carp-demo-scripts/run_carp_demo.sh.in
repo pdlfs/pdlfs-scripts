@@ -1,0 +1,325 @@
+#!/usr/bin/env bash
+
+set -eu
+
+INSTALL_PREFIX=@CMAKE_INSTALL_PREFIX@
+source $INSTALL_PREFIX/scripts/carp_demo_common.sh
+
+runcmd_carp_demo() {
+  # renegotiation interval: 10000
+  RENEG_INTVL=$RENEG_INTVL_DEMO
+
+  # directory for carp output
+  JOB_DIR=$JOB_ROOT/carp-demo
+
+  VPIC_DIR=$JOB_DIR/vpic
+  PLFS_DIR=$JOB_DIR/plfs
+  INFO_DIR=$JOB_DIR/exp-info
+
+  LOG_FILE=$JOB_DIR/log.txt
+
+  big_line
+  echo "**Executing artifact: range-runner + CARP**"
+  echo "- (Warning: this will produce ~200 lines of output)"
+  confirm
+  small_line
+
+  mkdir -p $VPIC_DIR
+  mkdir -p $PLFS_DIR/particle
+  mkdir -p $INFO_DIR
+
+  if [[ "${DRYRUN:-1}" -eq 1 ]]; then
+    return
+  fi
+
+	run_carp
+}
+
+runcmd_compactor() {
+  local plfs_dir=$1
+  local sort_dir=$2
+  local -i num_epochs=$3
+
+  big_line
+  echo "**Executing artifact: compactor**"
+  confirm
+  small_line
+
+  for epoch in $(seq 0 $((num_epochs - 1))); do
+    echo >&2 "-------" >&2
+    echo "Compacting Epoch $epoch" >&2
+
+    if [[ "${DRYRUN:-1}" -eq 1 ]]; then
+      continue
+    fi
+
+    $COMPACTOR_BIN -i $plfs_dir -o $sort_dir -e $epoch
+  done
+}
+
+runcmd_range_reader() {
+  local cmd_flags=""
+
+  # if number of args is 4
+  if [[ $# -eq 4 ]]; then
+    # query-mode
+    local plfs_dir=$1
+    local epoch=$2
+    local qbegin=$3
+    local qend=$4
+
+    cmd_flags="-i $plfs_dir -p $PARALLELISM -q -e $epoch -x $qbegin -y $qend"
+  elif [[ $# -eq 1 ]]; then
+    #analysis mode
+    local plfs_dir=$1
+    cmd_flags="-i $plfs_dir -a -p $PARALLELISM"
+  else
+    abort "Invalid argument count"
+  fi
+
+  if [[ $# -eq 4 ]]; then
+    big_line
+    echo "**Executing artifact: range-reader (query)**"
+    confirm
+    small_line
+  else
+    big_line
+    echo "**Executing artifact: range-reader (analysis)**"
+    confirm
+    small_line
+  fi
+
+  if [[ "${DRYRUN:-1}" -eq 1 ]]; then
+    return
+  fi
+
+  [[ -d $plfs_dir ]] || abort "Directory $plfs_dir does not exist"
+
+  $RANGEREADER_BIN $cmd_flags
+}
+
+run_intro() {
+  big_line
+cat <<EOF
+ _____   ___  ____________  ______ ________  ________ 
+/  __ \ / _ \ | ___ \ ___ \ |  _  \  ___|  \/  |  _  |
+| /  \// /_\ \| |_/ / |_/ / | | | | |__ | .  . | | | |
+| |    |  _  ||    /|  __/  | | | |  __|| |\/| | | | |
+| \__/\| | | || |\ \| |     | |/ /| |___| |  | \ \_/ /
+ \____/\_| |_/\_| \_\_|     |___/ \____/\_|  |_/\___/ 
+
+EOF
+
+  cat <<EOF
+This is a CARP demo suite. It will demonstrate the basic end-to-end 
+functionality of the CARP pipeline using a small trace located at:
+  $TRACE_DIR.
+
+Before every stage, it will describe the next stage, the artifacts
+used, and the expected outcome, and prompt for confimation.
+
+The demo should take ~2 minutes to run.
+EOF
+
+  small_line
+
+  confirm
+}
+
+run_trace_intro() {
+  cat <<EOF
+We will briefly describe the trace first.
+The trace contains 3 timesteps, as shown below:
+
+$ ls -l $TRACE_DIR
+
+EOF
+  ls -l $TRACE_DIR
+
+  echo -e "\nEach timestep directory contains 16 files, to simulate a 16-rank run:"
+  small_line
+
+  echo "$ ls -l $TRACE_DIR/T.200"
+  echo
+
+  ls $TRACE_DIR/T.200
+}
+
+run_carp_write() {
+  cat <<EOF
+$(small_line)
+- Each file, such as eparticle.200.0, is a set of 4B floating-point energies
+  from a VPIC simulation. Each file is 256KB, and contains 65536 particle keys.
+
+- Across 16 files, the trace contains 1 million particles.
+
+- These files will be consumed by 16 ranks of the binary located at:
+  $RANGEREADER_BIN
+
+- Each rank will read a 4B float, and convert it into a 64B particle
+  by using garbage values for the other fields. 
+
+  (CARP only uses the 4B key for shuffling).
+
+- Each rank will use simple fopen/fwrite/fclose calls to write these particles.
+  This simulates a VPIC checkpointing operation.
+
+- CARP will transparently intercept these writes via LD_PRELOAD
+
+- CARP will automatically partition data and write the partitioned output
+  to $JOB_ROOT/carp-demo.
+
+- The rangereader binary (at $RANGEREADER_BIN) will be used to read the trace.
+
+Let us begin by executing the write path.
+EOF
+
+  runcmd_carp_demo
+}
+
+run_carp_write_analysis() {
+  # PARALLELISM=4
+  # $RANGEREADER_BIN -i $PLFS_DIR/particle -a -p $PARALLELISM
+
+  cat <<EOF
+$(small_line)
+The output above shows some stats for the CARP run that just completed.
+
+- 3 epochs were written, 1M particles in each epoch
+- Each CARP sender produced 62.5K particles, and each receiver received
+  ~56K to ~67K particles
+- The load std-dev (partition load imbalance) should be around 2-3%
+- 21 renegotiations were invoked across 3 epochs
+
+CARP-partitioned output was written here:
+  $ ls -l $PLFS_DIR/particle
+
+$(ls -l $PLFS_DIR/particle)
+$(small_line)
+EOF
+
+  cat <<EOF
+$(small_line)
+We will now use range-runner to analyze CARP output, and trigger queries.
+EOF
+
+  runcmd_range_reader $PLFS_DIR/particle
+
+  cat <<EOF
+$(small_line)
+The output above should show 3 epochs, with 1M particles each.
+The key range for each epoch should be in the range (0, ~7).
+
+Since we are running CARP with 16 ranks, we should see 100/16=~6% of
+the particles in each rank's partition.
+
+As CARP is adaptive and partially sorted, its partitioning is different
+for different points in the keyspace.
+
+EOF
+}
+
+run_carp_query_path() {
+  cat <<EOF
+We will now use range-runner to trigger a same query against CARP output.
+Our query will be (epoch 0, range 0.5-0.6).
+EOF
+
+  runcmd_range_reader $PLFS_DIR/particle 0 0.5 0.6
+
+  cat <<EOF
+$(small_line)
+We will use compactor to convert CARP output to a fully sorted output
+This layout will be used to compare CARP performance with a fully sorted layout
+EOF
+
+  runcmd_compactor $PLFS_DIR/particle $PLFS_DIR/particle.sorted 3
+
+  cat <<EOF
+$(small_line)
+Compactor has completed.
+
+Compactor created a separate subdirectory for each epoch:
+  $ ls -l $PLFS_DIR/particle.sorted
+
+$(ls -l $PLFS_DIR/particle.sorted)
+
+  $ ls -l $PLFS_DIR/particle.sorted/0
+
+$(ls -l $PLFS_DIR/particle.sorted/0)
+
+We will now trigger another query again for CARP vs sorted.
+
+Let us use (epoch 1, range 0.3-0.4) as our query.
+EOF
+
+  runcmd_range_reader $PLFS_DIR/particle 1 0.3 0.4
+
+  cat <<EOF
+$(small_line)
+  CARP query was triggered. Note the "total keys matched"
+
+  Times for reading and merging SSTs are also reported, but they
+  are not meaningful for comparisons in this demo, as we are not
+  clearing caches, and the dataset sizes are small.
+EOF
+
+  runcmd_range_reader $PLFS_DIR/particle.sorted/1 1 0.3 0.4
+
+  cat <<EOF
+$(small_line)
+Sorted query has completed. Note the "total keys matched" here.
+This should be the same for CARP and Sorted.
+
+Query key selectivity is the total number of keys selected by the
+range query. For a query that selects 150K keys out of 1M, its
+key selectivity is 15%.
+
+SST selectivity is the number of SSTs that were read to process the
+query. SST selectivity is a function of the storage layout, and is
+lower-bounded by the key selectivity.
+
+In this demo, as CARP renegotiates unrealistically frequently,
+it generates very small SSTs, and its SST selectivity is unrealistically
+lower than Sorted. This is not representative of a large run.
+
+$(small_line)
+
+This is the end of the CARP tour. To summarize, we:
+
+1. Used range-runner + CARP to simulate a scientific application checkpoint
+   via trace-replay
+
+2. Analyzed the CARP output using range-reader
+
+3. Used compactor to convert CARP output to a fully sorted layout. Ideally, we
+   would use a proper sorting system, but compactor uses the same metadata format
+   as CARP, so it allows for a fair comparison between the intrinsic sortedness
+   of the layouts, without the differences in storage formats etc. being a factor.
+
+4. Triggered a query against CARP and sorted output, and ensured functional
+   similarity.
+
+This concludes the CARP demo suite. 
+
+ ____________________
+< thanks for coming! >
+ --------------------
+        \   ^__^
+         \  (oo)\_______
+            (__)\       )\/\
+                ||----w |
+                ||     ||
+$(big_line)
+EOF
+}
+
+run() {
+  run_intro
+  run_trace_intro
+  run_carp_write
+  run_carp_write_analysis
+  run_carp_query_path
+}
+
+run

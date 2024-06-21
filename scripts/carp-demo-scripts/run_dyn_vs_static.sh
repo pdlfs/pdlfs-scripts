@@ -1,6 +1,10 @@
 #!/usr/bin/env bash
 
-source run_common.sh
+set -eu
+
+INSTALL_PREFIX=/l0/install
+source $INSTALL_PREFIX/paths.sh
+source $INSTALL_PREFIX/run_common.sh
 
 # directory to read trace from
 TRACEDIR=/root/data/particle.compressed.sample

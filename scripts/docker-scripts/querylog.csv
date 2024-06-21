@@ -1,6 +1,0 @@
-plfspath,epoch,qbegin,qend,qselectivity,qkeyselectivity,qreadus,qsortus
-/root/scripts/carp-jobdir/plfs/particle,0,0.500000,0.600000,0.187087,0.095162,5147,6610
-/root/scripts/carp-jobdir/plfs/particle,0,0.500000,0.600000,0.187087,0.095162,5392,2873
-/root/data/carp-jobdir/plfs/particle,0,0.500000,0.600000,0.186363,0.095162,4189,4502
-/root/data/carp-jobdir/plfs/particle,0,0.500000,0.600000,0.188249,0.095162,5788,4642
-/root/data/carp-jobdir/fig-5a-runtime/plfs/particle,0,0.500000,0.600000,0.184222,0.095162,4827,7041

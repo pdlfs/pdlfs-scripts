@@ -67,13 +67,19 @@ if (all OR EXISTS "${UMBRELLA_BINARY_DIR}/vpic-prefix"
 endif()
 
 #
-# all carp scripts. these currently rely on certain datasets and hardcode storage clusters etc
-# install directly
+# carp demo scripts.
 #
+list (APPEND install-programs carp-demo-scripts/carp_demo_common.sh)
+list (APPEND install-programs-in 
+  carp-demo-scripts/run_carp_demo.sh.in
+  carp-demo-scripts/run_carp_demo_intvl_suite.sh.in
+)
 
-install(DIRECTORY experiments DESTINATION scripts 
-  FILES_MATCHING PATTERN "*.sh"
-  PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_EXECUTE)
+#
+# carp demo trace. not a script, install directly
+#
+install(DIRECTORY carp-demo-scripts/particle.compressed.sample 
+  DESTINATION share/traces)
 
 #
 # end of scripts.   now we can configure and install...
