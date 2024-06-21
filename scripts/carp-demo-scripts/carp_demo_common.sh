@@ -148,7 +148,7 @@ run_carp() {
     -env SHUFFLE_Force_sync_rpc 0 \
     -env SHUFFLE_Placement_protocol ring \
     -env SHUFFLE_Virtual_factor 1024 \
-    -env SHUFFLE_Subnet 10.111 \
+    -env SHUFFLE_Subnet 0.0.0.0 \
     -env SHUFFLE_Finalize_pause 0 \
     -env SHUFFLE_Force_global_barrier 0 \
     -env SHUFFLE_Local_senderlimit 16 \

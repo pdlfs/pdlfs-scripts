@@ -195,7 +195,6 @@ CARP-partitioned output was written here:
   $ ls -l $PLFS_DIR/particle
 
 $(ls -l $PLFS_DIR/particle)
-$(small_line)
 EOF
 
   cat <<EOF
