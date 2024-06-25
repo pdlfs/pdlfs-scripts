@@ -73,6 +73,8 @@ list (APPEND install-programs carp-demo-scripts/carp_demo_common.sh)
 list (APPEND install-programs-in 
   carp-demo-scripts/run_carp_demo.sh.in
   carp-demo-scripts/run_carp_demo_intvl_suite.sh.in
+  carp-demo-scripts/run_vpic_small.sh.in
+  carp-demo-scripts/run_vpic_big.sh.in
 )
 
 #

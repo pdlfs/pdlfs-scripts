@@ -1,0 +1,15 @@
+#!/usr/bin/env bash
+
+# XXX: sample script, needs to be configured for a large cluster
+
+VPIC_BIN=@CMAKE_INSTALL_PREFIX@/decks/reconnection512.Linux
+VPIC_PWD=/tmp/carp-demo/vpic-trace-big
+
+mkdir -p $VPIC_PWD
+cd $VPIC_PWD
+
+# run VPIC, large scale. mpirun needs to be configured appropriately for a larger cluster
+mpirun -np 512 $VPIC_BIN
+
+# enable to generate $VPIC_PWD/particle.compressed from $VPIC_PWD/particle.compressed
+# python /root/carp-install/scripts/workload_parser.py $VPIC_PWD/particle
