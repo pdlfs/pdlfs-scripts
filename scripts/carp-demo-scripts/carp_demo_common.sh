@@ -11,7 +11,7 @@ TRACE_DIR=$INSTALL_PREFIX/share/traces/particle.compressed.sample
 TRACE_EPOCH_COUNT=3
 
 RANGERUNNER_BIN=$INSTALL_PREFIX/bin/range-runner
-RANGEREADER_BIN=$INSTALL_PREFIX/bin/rangereader
+RANGEREADER_BIN=$INSTALL_PREFIX/bin/range-reader
 COMPACTOR_BIN=$INSTALL_PREFIX/bin/compactor
 
 # particle count is 10^4 * PARTICLE_COUNT
