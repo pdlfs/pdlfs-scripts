@@ -12,5 +12,9 @@ cd $VPIC_PWD
 # run VPIC, small scale. should be doable on a smaller cluster
 mpirun -np 32 $VPIC_BIN
 
-# enable to generate $VPIC_PWD/particle.compressed, from $VPIC_PWD/particle.compressed
-# python /root/carp-install/scripts/workload_parser.py $VPIC_PWD/particle
+# $VPIC_PWD/particle is converted into particle.compressed
+# by following these steps:
+# - each particle is parsed to populate a particle struct
+# - particle struct has ux, uy, uz (momentum in x/y/z)
+# - energy is computed using E = sqrt(1 + px^2 + py^2 + pz^2) - 1
+# refer to scripts/gen_compressed_trace.py for the full workflow
