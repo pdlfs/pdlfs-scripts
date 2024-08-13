@@ -60,10 +60,16 @@ init_job_root() {
   # while the user does not enter a valid job_root, infinite loop
   while true; do
     echo "Current job root: $JOB_ROOT"
-    read -p "Enter job root to change, ENTER to accept. " job_root
+    read -p "Enter job root (absolute path) to change, ENTER to accept. " job_root
 
     if [[ ! -z $job_root ]]; then
       JOB_ROOT=$job_root
+    fi
+
+    if [[ ! $JOB_ROOT =~ ^/ ]]; then
+      echo "Job root must be an absolute path."
+      JOB_ROOT=""
+      continue
     fi
 
     if [[ ! -d $JOB_ROOT ]]; then
