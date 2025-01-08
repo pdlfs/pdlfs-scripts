@@ -238,6 +238,11 @@ common_init() {
     if [ x${COBALT_PARTNAME-} = x -a x${COBALT_NODEFILE-} = x ]; then
       die "bad cobalt setup - check partname/nodefile"
     fi
+  elif [ $jobenv = openmpi -o $jobenv = mpich ]; then
+    if [ x${MPIJOBID-} = x ]; then
+      # no batch system, use top-level pid as job id
+      export MPIJOBID=$$
+    fi
   fi
 }
 
