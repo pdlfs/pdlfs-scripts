@@ -203,7 +203,8 @@ common_init() {
   #
   if [ $jobruncli = openmpi ]; then
     if [ "`( $jobruncmd --help ; $jobruncmd --help -V ) 2>&1 | \
-                                           fgrep -e '--bind-to '`" ]; then
+                                           fgrep -e '--bind-to '`" -o \
+         "`( $jobruncmd --help ) 2>&1 | fgrep 'or HTML help'`" ]; then
       message "-INFO- common_init: openmpi supports new --bind-to flag"
       openmpi_newbind=1
     else
